@@ -37,6 +37,14 @@ app.get("/", async (_request, reply) => {
   return reply.sendFile("index.html");
 });
 
+app.get("/strategy", async (_request, reply) => {
+  return reply.sendFile("strategy/index.html");
+});
+
+app.get("/strategy/", async (_request, reply) => {
+  return reply.sendFile("strategy/index.html");
+});
+
 const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? "0.0.0.0";
 
