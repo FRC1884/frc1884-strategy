@@ -9,7 +9,7 @@ Domain:
 
 App runtime:
 
-- bare repo: `/home/mariano/git/frc1884-strategy.git`
+- GitHub repo: `https://github.com/FRC1884/frc1884-strategy.git`
 - repo path: `/srv/frc1884-strategy`
 - deploy branch: `deploy/jpclawhq-prod`
 - app port: `3010`
@@ -18,16 +18,16 @@ App runtime:
 
 ## First-time setup
 
-1. Push `deploy/jpclawhq-prod` to the server bare repo at `/home/mariano/git/frc1884-strategy.git`
-2. Clone the deploy branch to `/srv/frc1884-strategy`
-2. Run `npm ci`
-3. Run `npm run build`
-4. Install `deploy/systemd/frc1884-strategy.service` to `/etc/systemd/system/`
-5. Install `deploy/nginx/griffins1884.org.conf` to `/etc/nginx/sites-available/`
-6. Symlink the nginx site into `/etc/nginx/sites-enabled/`
-7. `sudo systemctl daemon-reload`
-8. `sudo systemctl enable --now frc1884-strategy.service`
-9. `sudo nginx -t && sudo systemctl reload nginx`
+1. Clone `https://github.com/FRC1884/frc1884-strategy.git` to `/srv/frc1884-strategy`
+2. Check out `deploy/jpclawhq-prod`
+3. Run `npm ci`
+4. Run `npm run build`
+5. Install `deploy/systemd/frc1884-strategy.service` to `/etc/systemd/system/`
+6. Install `deploy/nginx/griffins1884.org.conf` to `/etc/nginx/sites-available/`
+7. Symlink the nginx site into `/etc/nginx/sites-enabled/`
+8. `sudo systemctl daemon-reload`
+9. `sudo systemctl enable --now frc1884-strategy.service`
+10. `sudo nginx -t && sudo systemctl reload nginx`
 
 ## Future deploys
 
@@ -46,12 +46,10 @@ That performs the one-command deploy flow on the production checkout:
 
 ## Local publish step
 
-The production checkout pulls from the bare repo on `jpclawhq`, not from GitHub.
-
 Push updates from your local machine with:
 
 ```bash
-git push prod deploy/jpclawhq-prod
+git push origin deploy/jpclawhq-prod
 ```
 
 Then deploy on the server with:
