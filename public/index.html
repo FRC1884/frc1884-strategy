@@ -47,34 +47,32 @@
         padding: 20px 0 40px;
       }
 
-      /* ── Wordmark header ── */
-      .header-wordmark {
-        display: block;
-        width: min(420px, 60%);
-        height: auto;
-        margin: 0 0 28px 4px;
-      }
-
       /* ── Hero ── */
       .hero {
-        position: relative;
-        overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 24px;
         background: linear-gradient(145deg, rgba(255,255,255,0.04), transparent), var(--panel);
         box-shadow: 0 20px 60px var(--shadow);
-        padding: 34px;
+        padding: 36px 34px 32px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 24px;
+        align-items: center;
+      }
+
+      .hero-content {}
+
+      .hero-wordmark {
+        display: block;
+        height: 56px;
+        width: auto;
+        margin-bottom: 16px;
       }
 
       .hero-mark {
-        position: absolute;
-        right: -20px;
-        top: 50%;
-        transform: translateY(-50%);
-        height: 280px;
+        height: 130px;
         width: auto;
-        opacity: 0.07;
-        pointer-events: none;
+        opacity: 0.6;
       }
 
       .lead {
@@ -305,14 +303,14 @@
           padding-top: 14px;
         }
 
-        .hero { padding: 24px 20px; }
-
-        .hero-mark { height: 180px; }
-
-        .header-wordmark {
-          width: min(280px, 70%);
-          margin-bottom: 20px;
+        .hero {
+          grid-template-columns: 1fr;
+          padding: 24px 20px;
         }
+
+        .hero-mark { display: none; }
+
+        .hero-wordmark { height: 42px; }
 
         .hero-apps { flex-direction: column; }
 
@@ -331,16 +329,15 @@
   <body>
     <main class="shell">
 
-      <img class="header-wordmark" src="/assets/griffins-wordmark.png" alt="Griffins 1884" />
-
       <section class="hero">
-        <img class="hero-mark" src="/assets/griffins-mark.png" alt="" />
-        <p class="lead">
-          The American School in London's FIRST Robotics Competition team.
-          Based in London, competing internationally since 2006.
-        </p>
-        <div class="apps-heading">Team Apps</div>
-        <div class="hero-apps">
+        <div class="hero-content">
+          <img class="hero-wordmark" src="/assets/griffins-wordmark.png" alt="Griffins 1884" />
+          <p class="lead">
+            The American School in London's FIRST Robotics Competition team.
+            Based in London, competing internationally since 2006.
+          </p>
+          <div class="apps-heading">Team Apps</div>
+          <div class="hero-apps">
           <a class="app-link" href="/strategy">
             <span class="app-label">Match Planning</span>
             <span class="app-title">Strategy</span>
@@ -351,7 +348,9 @@
             <span class="app-title">Scouting</span>
             <span class="app-copy">Live data collection, team notes, and scouting workflows.</span>
           </a>
+          </div>
         </div>
+        <img class="hero-mark" src="/assets/griffins-mark.png" alt="" />
       </section>
 
       <div class="section-row">
