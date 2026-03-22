@@ -49,40 +49,46 @@
 
       /* ── Hero ── */
       .hero {
+        position: relative;
+        overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 24px;
         background: linear-gradient(145deg, rgba(255,255,255,0.04), transparent), var(--panel);
         box-shadow: 0 20px 60px var(--shadow);
         padding: 36px 34px 32px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 24px;
-        align-items: center;
       }
 
-      .hero-content {}
+      .hero-header {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
 
       .hero-wordmark {
-        display: block;
-        height: 56px;
+        height: 100px;
         width: auto;
-        margin-bottom: 16px;
-      }
-
-      .hero-mark {
-        height: 130px;
-        width: auto;
-        opacity: 0.6;
+        flex-shrink: 0;
       }
 
       .lead {
-        max-width: 56ch;
         color: var(--muted);
         font-size: 17px;
         line-height: 1.7;
       }
 
+      .hero-mark {
+        position: absolute;
+        right: -40px;
+        bottom: -60px;
+        height: 420px;
+        width: auto;
+        opacity: 0.06;
+        pointer-events: none;
+      }
+
       .apps-heading {
+        position: relative;
         margin-top: 28px;
         margin-bottom: 12px;
         font-size: 11px;
@@ -93,6 +99,7 @@
       }
 
       .hero-apps {
+        position: relative;
         display: flex;
         gap: 12px;
       }
@@ -303,14 +310,13 @@
           padding-top: 14px;
         }
 
-        .hero {
-          grid-template-columns: 1fr;
-          padding: 24px 20px;
-        }
+        .hero { padding: 24px 20px; }
 
-        .hero-mark { display: none; }
+        .hero-header { flex-direction: column; gap: 14px; }
 
-        .hero-wordmark { height: 42px; }
+        .hero-wordmark { height: 60px; }
+
+        .hero-mark { height: 250px; right: -60px; bottom: -40px; }
 
         .hero-apps { flex-direction: column; }
 
@@ -330,14 +336,16 @@
     <main class="shell">
 
       <section class="hero">
-        <div class="hero-content">
+        <img class="hero-mark" src="/assets/griffins-mark.png" alt="" />
+        <div class="hero-header">
           <img class="hero-wordmark" src="/assets/griffins-wordmark.png" alt="Griffins 1884" />
           <p class="lead">
             The American School in London's FIRST Robotics Competition team.
             Based in London, competing internationally since 2006.
           </p>
-          <div class="apps-heading">Team Apps</div>
-          <div class="hero-apps">
+        </div>
+        <div class="apps-heading">Team Apps</div>
+        <div class="hero-apps">
           <a class="app-link" href="/strategy">
             <span class="app-label">Match Planning</span>
             <span class="app-title">Strategy</span>
@@ -348,9 +356,7 @@
             <span class="app-title">Scouting</span>
             <span class="app-copy">Live data collection, team notes, and scouting workflows.</span>
           </a>
-          </div>
         </div>
-        <img class="hero-mark" src="/assets/griffins-mark.png" alt="" />
       </section>
 
       <div class="section-row">
