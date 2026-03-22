@@ -23,6 +23,7 @@
         --muted: #c9e0f4;
         --dim: #8badc8;
         --gold: #d8ad58;
+        --banner-blue: #3857c8;
         --shadow: rgba(3, 10, 17, 0.34);
       }
 
@@ -58,20 +59,17 @@
       .topbar-brand {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
       }
 
-      .topbar-brand img {
-        height: 36px;
+      .topbar-mark {
+        height: 44px;
         width: auto;
       }
 
-      .topbar-brand span {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--muted);
+      .topbar-wordmark {
+        height: 22px;
+        width: auto;
       }
 
       .socials {
@@ -107,32 +105,29 @@
         border-radius: 24px;
         background: linear-gradient(145deg, rgba(255,255,255,0.04), transparent), var(--panel);
         box-shadow: 0 20px 60px var(--shadow);
-        padding: 36px 34px 32px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 32px;
-        align-items: center;
-      }
-
-      .hero-text { max-width: 520px; }
-
-      .hero-wordmark {
-        display: block;
-        height: 52px;
-        width: auto;
-        margin-bottom: 14px;
+        padding: 34px;
       }
 
       .lead {
+        max-width: 56ch;
         color: var(--muted);
         font-size: 17px;
         line-height: 1.7;
       }
 
+      .apps-heading {
+        margin-top: 28px;
+        margin-bottom: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--dim);
+      }
+
       .hero-apps {
         display: flex;
         gap: 12px;
-        margin-top: 22px;
       }
 
       .app-link {
@@ -173,12 +168,6 @@
         line-height: 1.5;
       }
 
-      .hero-mark {
-        width: 140px;
-        height: auto;
-        opacity: 0.85;
-      }
-
       /* ── Sections ── */
       .section-row {
         display: grid;
@@ -196,10 +185,8 @@
       }
 
       .card h2 {
-        font-size: 17px;
         font-weight: 700;
-        letter-spacing: -0.02em;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
         color: var(--muted);
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -208,41 +195,52 @@
 
       /* ── Banners ── */
       .banners {
-        display: grid;
-        gap: 8px;
-      }
-
-      .banner {
         display: flex;
-        align-items: baseline;
-        gap: 10px;
-        padding: 10px 14px;
-        border-left: 3px solid var(--gold);
-        border-radius: 0 12px 12px 0;
-        background: rgba(255, 255, 255, 0.03);
-        font-size: 14px;
-        line-height: 1.5;
+        flex-wrap: wrap;
+        gap: 12px;
       }
 
-      .banner-year {
-        font-weight: 700;
-        font-size: 13px;
-        color: var(--gold);
-        flex-shrink: 0;
+      .banner-flag {
+        width: 110px;
+        text-align: center;
       }
 
-      .banner-award {
-        font-weight: 600;
+      .banner-body {
+        background: linear-gradient(180deg, #4568d4, var(--banner-blue));
+        padding: 16px 10px 22px;
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+        border-radius: 6px 6px 0 0;
+        min-height: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
       }
 
-      .banner-event {
-        color: var(--dim);
-        font-size: 13px;
-      }
-
-      .banner-sep {
-        color: var(--dim);
+      .banner-award-name {
         font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1.3;
+        color: #fff;
+      }
+
+      .banner-event-name {
+        margin-top: 6px;
+        font-size: 10px;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.75);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .banner-year-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--dim);
+        margin-top: 6px;
       }
 
       /* ── Highlights ── */
@@ -262,7 +260,7 @@
 
       .highlight-year {
         flex-shrink: 0;
-        width: 68px;
+        width: 62px;
         font-weight: 700;
         font-size: 13px;
         color: var(--text);
@@ -311,18 +309,19 @@
           padding-top: 14px;
         }
 
-        .hero {
-          grid-template-columns: 1fr;
-          padding: 24px 20px;
-        }
-
-        .hero-mark { display: none; }
+        .hero { padding: 24px 20px; }
 
         .hero-apps { flex-direction: column; }
 
         .section-row { grid-template-columns: 1fr; }
 
-        .topbar-brand span { display: none; }
+        .topbar-wordmark { display: none; }
+
+        .banners { justify-content: center; }
+
+        .banner-flag { width: 90px; }
+
+        .banner-body { min-height: 100px; padding: 14px 8px 20px; }
 
         footer { flex-direction: column; align-items: flex-start; }
       }
@@ -333,8 +332,8 @@
 
       <nav class="topbar">
         <div class="topbar-brand">
-          <img src="/assets/griffins-mark.png" alt="Griffins 1884" />
-          <span>FRC 1884</span>
+          <img class="topbar-mark" src="/assets/griffins-mark.png" alt="Griffins 1884" />
+          <img class="topbar-wordmark" src="/assets/griffins-wordmark.png" alt="Griffins" />
         </div>
         <div class="socials">
           <a href="https://www.instagram.com/aslrobotics" aria-label="Instagram">
@@ -356,59 +355,77 @@
       </nav>
 
       <section class="hero">
-        <div class="hero-text">
-          <img class="hero-wordmark" src="/assets/griffins-wordmark.png" alt="Griffins" />
-          <p class="lead">
-            The American School in London's FIRST Robotics Competition team.
-            Based in London, competing internationally since 2006.
-          </p>
-          <div class="hero-apps">
-            <a class="app-link" href="/strategy">
-              <span class="app-label">Match Planning</span>
-              <span class="app-title">Strategy</span>
-              <span class="app-copy">Alliance planning, match boards, and event prep.</span>
-            </a>
-            <a class="app-link" href="/scouting">
-              <span class="app-label">Field Data</span>
-              <span class="app-title">Scouting</span>
-              <span class="app-copy">Live data collection, team notes, and scouting workflows.</span>
-            </a>
-          </div>
+        <p class="lead">
+          The American School in London's FIRST Robotics Competition team.
+          Based in London, competing internationally since 2006.
+        </p>
+        <div class="apps-heading">Team Apps</div>
+        <div class="hero-apps">
+          <a class="app-link" href="/strategy">
+            <span class="app-label">Match Planning</span>
+            <span class="app-title">Strategy</span>
+            <span class="app-copy">Alliance planning, match boards, and event prep.</span>
+          </a>
+          <a class="app-link" href="/scouting">
+            <span class="app-label">Field Data</span>
+            <span class="app-title">Scouting</span>
+            <span class="app-copy">Live data collection, team notes, and scouting workflows.</span>
+          </a>
         </div>
-        <img class="hero-mark" src="/assets/griffins-mark.png" alt="" />
       </section>
 
       <div class="section-row">
         <div class="card">
           <h2>Award Banners</h2>
           <div class="banners">
-            <div class="banner">
-              <span class="banner-year">2026</span>
-              <span><span class="banner-award">FIRST Impact Award</span> <span class="banner-sep">&middot;</span> <span class="banner-event">Brazil - SESI Osasco</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">FIRST Impact Award</span>
+                <span class="banner-event-name">Brazil - SESI Osasco</span>
+              </div>
+              <div class="banner-year-label">2026</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2026</span>
-              <span><span class="banner-award">Regional Winner</span> <span class="banner-sep">&middot;</span> <span class="banner-event">Brazil - SESI Osasco</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Winner</span>
+                <span class="banner-event-name">Brazil - SESI Osasco</span>
+              </div>
+              <div class="banner-year-label">2026</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2018</span>
-              <span><span class="banner-award">Woodie Flowers Finalist</span> <span class="banner-sep">&middot;</span> <span class="banner-event">Shenzhen</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Woodie Flowers Finalist</span>
+                <span class="banner-event-name">Shenzhen Regional</span>
+              </div>
+              <div class="banner-year-label">2018</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2017</span>
-              <span><span class="banner-award">Regional Winner</span> <span class="banner-sep">&middot;</span> <span class="banner-event">Shenzhen</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Winner</span>
+                <span class="banner-event-name">Shenzhen Regional</span>
+              </div>
+              <div class="banner-year-label">2017</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2015</span>
-              <span><span class="banner-award">Regional Winner</span> <span class="banner-sep">&middot;</span> <span class="banner-event">New York City</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Winner</span>
+                <span class="banner-event-name">New York City Regional</span>
+              </div>
+              <div class="banner-year-label">2015</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2014</span>
-              <span><span class="banner-award">Woodie Flowers Finalist</span> <span class="banner-sep">&middot;</span> <span class="banner-event">New York City</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Woodie Flowers Finalist</span>
+                <span class="banner-event-name">New York City Regional</span>
+              </div>
+              <div class="banner-year-label">2014</div>
             </div>
-            <div class="banner">
-              <span class="banner-year">2014</span>
-              <span><span class="banner-award">Regional Winner</span> <span class="banner-sep">&middot;</span> <span class="banner-event">New York City</span></span>
+            <div class="banner-flag">
+              <div class="banner-body">
+                <span class="banner-award-name">Winner</span>
+                <span class="banner-event-name">New York City Regional</span>
+              </div>
+              <div class="banner-year-label">2014</div>
             </div>
           </div>
         </div>
