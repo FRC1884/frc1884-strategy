@@ -56,6 +56,7 @@ function queueDeploy(afterSha) {
       `echo "[$(date -Is)] deploy requested for ${afterSha}"`,
       `cd ${repoDir}`,
       "git fetch origin",
+      "git show origin/main:scripts/deploy-jpclawhq-main.sh >/dev/null",
       "git checkout main",
       "git pull --ff-only origin main",
       "./scripts/deploy-jpclawhq-main.sh",
