@@ -1,0 +1,18 @@
+[Unit]
+Description=FRC 1884 Strategy GitHub Webhook
+After=network.target
+
+[Service]
+Type=simple
+User=mariano
+Group=mariano
+WorkingDirectory=/srv/frc1884-strategy
+Environment=NODE_ENV=production
+Environment=PORT=3013
+EnvironmentFile=/etc/frc1884-strategy/webhook.env
+ExecStart=/usr/bin/node /srv/frc1884-strategy/scripts/github-webhook-server.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
