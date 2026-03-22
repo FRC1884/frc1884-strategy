@@ -1,0 +1,18 @@
+[Unit]
+Description=FRC 1884 Strategy App
+After=network.target
+
+[Service]
+Type=simple
+User=mariano
+Group=mariano
+WorkingDirectory=/srv/frc1884-strategy
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3010
+ExecStart=/usr/bin/node /srv/frc1884-strategy/dist/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

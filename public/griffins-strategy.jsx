@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star } from 'lucide-react';
+const { useState, useEffect, useRef, useCallback } = React;
+const { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star } = LucideReact;
 
 const MATCHES = [
   { match:5,  day:"Sat 3/14", time:"9:26 AM",  red:[9218,10343,9199], blue:[1156,7565,1884],    our:'blue', stn:3 },
@@ -73,6 +73,96 @@ const SKETCH_COLORS=[
   {id:'blue',  label:'Blue',   hex:'#60a5fa'},
   {id:'yellow',label:'Yellow', hex:'#facc15'},
 ];
+
+const CURRENT_EVENT_KEY = '2026brazil';
+
+function formatMatchDateParts(iso) {
+  if (!iso) return { day:'TBD', time:'TBD' };
+  try {
+    const d = new Date(iso);
+    const day = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      weekday: 'short',
+      month: 'numeric',
+      day: 'numeric'
+    }).format(d).replace(',', '');
+    const time = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo',
+      hour: 'numeric',
+      minute: '2-digit'
+    }).format(d);
+    return { day, time };
+  } catch (_err) {
+    return { day:'TBD', time:'TBD' };
+  }
+}
+
+function mapApiMatchToLegacy(m) {
+  const red = (m.alliances && m.alliances.red ? m.alliances.red.teams : []).map(function(t){ return t.teamNumber; });
+  const blue = (m.alliances && m.alliances.blue ? m.alliances.blue.teams : []).map(function(t){ return t.teamNumber; });
+  const our = red.indexOf(1884) >= 0 ? 'red' : 'blue';
+  const stationEntry = (our === 'red' ? m.alliances.red.teams : m.alliances.blue.teams).find(function(t){ return t.teamNumber === 1884; });
+  const when = formatMatchDateParts(m.scheduledAt);
+  return {
+    matchKey: m.matchKey,
+    match: m.matchNumber,
+    day: when.day,
+    time: when.time,
+    red: red,
+    blue: blue,
+    our: our,
+    stn: stationEntry ? stationEntry.station : 1
+  };
+}
+
+function phasePreds(preds, prefix) {
+  var next = {};
+  Object.keys(preds || {}).forEach(function(key){
+    if(key.indexOf(prefix) === 0 && key !== prefix+'notes') next[key] = preds[key];
+  });
+  return next;
+}
+
+function strategyPlanPayload(matchObj, matchData) {
+  var data = matchData || {};
+  var preds = data.preds || {};
+  var auto = data.auto || {pos:{},strokes:[]};
+  var teleop = data.teleop || {pos:{},strokes:[]};
+  return {
+    matchKey: matchObj.matchKey,
+    title: 'Q'+matchObj.match+' plan',
+    phases: {
+      auto: {
+        pos: auto.pos || {},
+        strokes: auto.strokes || [],
+        notes: preds['AUTO-notes'] || '',
+        preds: phasePreds(preds,'AUTO-')
+      },
+      teleop: {
+        pos: teleop.pos || {},
+        strokes: teleop.strokes || [],
+        notes: preds['TELEOP-notes'] || '',
+        preds: phasePreds(preds,'TELEOP-')
+      }
+    },
+    updatedBy: 'browser-ui'
+  };
+}
+
+function localStratFromPlan(plan) {
+  var auto = (plan.phases && plan.phases.auto) || {};
+  var teleop = (plan.phases && plan.phases.teleop) || {};
+  var preds = {};
+  Object.assign(preds, auto.preds || {});
+  Object.assign(preds, teleop.preds || {});
+  if(auto.notes) preds['AUTO-notes'] = auto.notes;
+  if(teleop.notes) preds['TELEOP-notes'] = teleop.notes;
+  return {
+    auto: {pos: auto.pos || {}, strokes: auto.strokes || []},
+    teleop: {pos: teleop.pos || {}, strokes: teleop.strokes || []},
+    preds: preds
+  };
+}
 
 function defaultPos(m) {
   const p={};
@@ -734,128 +824,138 @@ function FreeStrat(){
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 space-y-1.5">
-          <p className="text-xs font-bold text-red-400">RED ALLIANCE</p>
-          {[0,1,2].map(function(i){return (
-            <div key={i}>
-              <p className="text-xs text-slate-500 mb-0.5">R{i+1}</p>
-              {sel('red',i,redTeams[i])}
+      <div className="xl:grid xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-4 xl:items-start">
+        <div className="space-y-4 xl:sticky xl:top-24">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 space-y-1.5">
+              <p className="text-xs font-bold text-red-400">RED ALLIANCE</p>
+              {[0,1,2].map(function(i){return (
+                <div key={i}>
+                  <p className="text-xs text-slate-500 mb-0.5">R{i+1}</p>
+                  {sel('red',i,redTeams[i])}
+                </div>
+              );})}
             </div>
-          );})}
-        </div>
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 space-y-1.5">
-          <p className="text-xs font-bold text-blue-400">BLUE ALLIANCE</p>
-          {[0,1,2].map(function(i){return (
-            <div key={i}>
-              <p className="text-xs text-slate-500 mb-0.5">B{i+1}</p>
-              {sel('blue',i,blueTeams[i])}
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 space-y-1.5">
+              <p className="text-xs font-bold text-blue-400">BLUE ALLIANCE</p>
+              {[0,1,2].map(function(i){return (
+                <div key={i}>
+                  <p className="text-xs text-slate-500 mb-0.5">B{i+1}</p>
+                  {sel('blue',i,blueTeams[i])}
+                </div>
+              );})}
             </div>
-          );})}
-        </div>
-      </div>
+          </div>
 
-      <div className="flex gap-2">
-        {['auto','teleop'].map(function(ph){return (
-          <button key={ph} onClick={function(){setActivePhase(ph);}}
-            className={"flex-1 py-1.5 rounded text-xs font-bold "+(activePhase===ph?(ph==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'):'bg-slate-700 text-slate-400')}>
-            {ph==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
-          </button>
-        );})}
-      </div>
-
-      <PhaseMap
-        phaseKey={activePhase}
-        label={activePhase==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
-        labelClass={activePhase==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'}
-        match={match}
-        getData={function(){return strats[activePhase]||{pos:{},strokes:[]};}}
-        setData={function(d){setStrats(function(s){var n={};for(var k in s)n[k]=s[k];n[activePhase]=d;return n;});}}/>
-
-      <div className="space-y-2">
-        {['AUTO','TELEOP'].map(function(phase){return (
-          <div key={phase} className="space-y-1.5">
-            <p className={"text-xs font-bold "+(phase==='AUTO'?'text-amber-400':'text-green-400')}>{phase} <span className="text-slate-400 font-normal">(F=Fuel, C=Climb)</span></p>
-            <div className="grid grid-cols-2 gap-2">
-              {[{label:'Red',side:'our',teams:redTeams,color:'red'},{label:'Blue',side:'opp',teams:blueTeams,color:'blue'}].map(function(al){
-                var subtotalF=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-fuel')||0);},0);
-                var subtotalC=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-climb')||0);},0);
-                return (
-                  <div key={al.side} className={"p-2 rounded border "+(al.color==='red'?'bg-red-500/10 border-red-500/30':'bg-blue-500/10 border-blue-500/30')}>
-                    <div className="flex justify-between mb-1">
-                      <span className={"text-xs font-bold "+(al.color==='red'?'text-red-400':'text-blue-400')}>{al.label}</span>
-                      <span className="text-xs text-slate-400">{subtotalF+subtotalC}pt</span>
-                    </div>
-                    {[0,1,2].map(function(i){
-                      var fk=phase+'-'+al.side+'-t'+i+'-fuel';
-                      var ck=phase+'-'+al.side+'-t'+i+'-climb';
-                      var tn=al.teams[i];
-                      var lbl=tn&&tn!==0?(''+tn+(tn===1884?' *':'')):(al.color==='red'?'R':'B')+(i+1);
-                      return (
-                        <div key={i} className={"flex items-center gap-1 text-xs mb-0.5 "+(al.color==='red'?'text-red-200':'text-blue-200')}>
-                          <span className="w-12 font-bold truncate shrink-0">{lbl}</span>
-                          <span className="text-slate-500 shrink-0">F:</span>
-                          <input type="number" min="0" value={gp(fk)===0?"":gp(fk)} onChange={function(e){sp(fk,e.target.value===''?0:+e.target.value);}}
-                            className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
-                          <span className="text-slate-500 shrink-0">C:</span>
-                          <input type="number" min="0" value={gp(ck)===0?"":gp(ck)} onChange={function(e){sp(ck,e.target.value===''?0:+e.target.value);}}
-                            className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
+          <div className="space-y-2">
+            {['AUTO','TELEOP'].map(function(phase){return (
+              <div key={phase} className="space-y-1.5">
+                <p className={"text-xs font-bold "+(phase==='AUTO'?'text-amber-400':'text-green-400')}>{phase} <span className="text-slate-400 font-normal">(F=Fuel, C=Climb)</span></p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{label:'Red',side:'our',teams:redTeams,color:'red'},{label:'Blue',side:'opp',teams:blueTeams,color:'blue'}].map(function(al){
+                    var subtotalF=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-fuel')||0);},0);
+                    var subtotalC=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-climb')||0);},0);
+                    return (
+                      <div key={al.side} className={"p-2 rounded border "+(al.color==='red'?'bg-red-500/10 border-red-500/30':'bg-blue-500/10 border-blue-500/30')}>
+                        <div className="flex justify-between mb-1">
+                          <span className={"text-xs font-bold "+(al.color==='red'?'text-red-400':'text-blue-400')}>{al.label}</span>
+                          <span className="text-xs text-slate-400">{subtotalF+subtotalC}pt</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                        {[0,1,2].map(function(i){
+                          var fk=phase+'-'+al.side+'-t'+i+'-fuel';
+                          var ck=phase+'-'+al.side+'-t'+i+'-climb';
+                          var tn=al.teams[i];
+                          var lbl=tn&&tn!==0?(''+tn+(tn===1884?' *':'')):(al.color==='red'?'R':'B')+(i+1);
+                          return (
+                            <div key={i} className={"flex items-center gap-1 text-xs mb-0.5 "+(al.color==='red'?'text-red-200':'text-blue-200')}>
+                              <span className="w-12 font-bold truncate shrink-0">{lbl}</span>
+                              <span className="text-slate-500 shrink-0">F:</span>
+                              <input type="number" min="0" value={gp(fk)===0?"":gp(fk)} onChange={function(e){sp(fk,e.target.value===''?0:+e.target.value);}}
+                                className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
+                              <span className="text-slate-500 shrink-0">C:</span>
+                              <input type="number" min="0" value={gp(ck)===0?"":gp(ck)} onChange={function(e){sp(ck,e.target.value===''?0:+e.target.value);}}
+                                className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );})}
+          </div>
+
+          <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
+            <p className="text-sm font-bold">Score + RP</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded text-center bg-red-500/20">
+                <p className="text-xs text-slate-400">Red</p>
+                <p className="text-3xl font-black">{ourT}</p>
+              </div>
+              <div className="p-3 rounded text-center bg-blue-500/20">
+                <p className="text-xs text-slate-400">Blue</p>
+                <p className="text-3xl font-black">{oppT}</p>
+              </div>
+            </div>
+            <div className="border-t border-slate-700 pt-2 space-y-1 text-xs">
+              <div className={"flex justify-between font-bold "+(res==='Win'?'text-green-400':res==='Loss'?'text-red-400':'text-yellow-400')}>
+                <span>Red: {res}</span><span>{res==='Win'?'+3RP':res==='Tie'?'+1RP':'+0RP'}</span>
+              </div>
+              <div className={"flex justify-between "+(ourF>=100?'text-yellow-300':'text-slate-500')}>
+                <span>ENERGIZED (100+ fuel)</span><span>{ourF>=100?'+1RP':'need '+(100-ourF)}</span>
+              </div>
+              <div className={"flex justify-between "+(ourF>=360?'text-orange-300':'text-slate-500')}>
+                <span>SUPERCHARGED (360+ fuel)</span><span>{ourF>=360?'+1RP':'need '+(360-ourF)}</span>
+              </div>
+              <div className={"flex justify-between "+(ourC>=50?'text-purple-300':'text-slate-500')}>
+                <span>TRAVERSAL (50+ climb)</span><span>{ourC>=50?'+1RP':'need '+(50-ourC)}</span>
+              </div>
+              <div className="flex justify-between font-black text-sm border-t border-slate-600 pt-1">
+                <span>Red projected RP</span><span className="text-green-400">{rp}</span>
+              </div>
             </div>
           </div>
-        );})}
-      </div>
 
-      <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
-        <p className="text-sm font-bold">Score + RP</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 rounded text-center bg-red-500/20">
-            <p className="text-xs text-slate-400">Red</p>
-            <p className="text-3xl font-black">{ourT}</p>
-          </div>
-          <div className="p-3 rounded text-center bg-blue-500/20">
-            <p className="text-xs text-slate-400">Blue</p>
-            <p className="text-3xl font-black">{oppT}</p>
-          </div>
+          <button onClick={function(){
+            setRedTeams([1884,0,0]);setBlueTeams([0,0,0]);
+            setStrats({auto:{pos:{},strokes:[]},teleop:{pos:{},strokes:[]}});
+            setPreds({});
+          }} className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
+            <RotateCcw className="w-3 h-3"/>Reset Board
+          </button>
         </div>
-        <div className="border-t border-slate-700 pt-2 space-y-1 text-xs">
-          <div className={"flex justify-between font-bold "+(res==='Win'?'text-green-400':res==='Loss'?'text-red-400':'text-yellow-400')}>
-            <span>Red: {res}</span><span>{res==='Win'?'+3RP':res==='Tie'?'+1RP':'+0RP'}</span>
+
+        <div className="space-y-4 mt-4 xl:mt-0">
+          <div className="flex gap-2">
+            {['auto','teleop'].map(function(ph){return (
+              <button key={ph} onClick={function(){setActivePhase(ph);}}
+                className={"flex-1 py-1.5 rounded text-xs font-bold "+(activePhase===ph?(ph==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'):'bg-slate-700 text-slate-400')}>
+                {ph==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
+              </button>
+            );})}
           </div>
-          <div className={"flex justify-between "+(ourF>=100?'text-yellow-300':'text-slate-500')}>
-            <span>ENERGIZED (100+ fuel)</span><span>{ourF>=100?'+1RP':'need '+(100-ourF)}</span>
-          </div>
-          <div className={"flex justify-between "+(ourF>=360?'text-orange-300':'text-slate-500')}>
-            <span>SUPERCHARGED (360+ fuel)</span><span>{ourF>=360?'+1RP':'need '+(360-ourF)}</span>
-          </div>
-          <div className={"flex justify-between "+(ourC>=50?'text-purple-300':'text-slate-500')}>
-            <span>TRAVERSAL (50+ climb)</span><span>{ourC>=50?'+1RP':'need '+(50-ourC)}</span>
-          </div>
-          <div className="flex justify-between font-black text-sm border-t border-slate-600 pt-1">
-            <span>Red projected RP</span><span className="text-green-400">{rp}</span>
-          </div>
+
+          <PhaseMap
+            phaseKey={activePhase}
+            label={activePhase==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
+            labelClass={activePhase==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'}
+            match={match}
+            getData={function(){return strats[activePhase]||{pos:{},strokes:[]};}}
+            setData={function(d){setStrats(function(s){var n={};for(var k in s)n[k]=s[k];n[activePhase]=d;return n;});}}/>
         </div>
       </div>
-
-      <button onClick={function(){
-        setRedTeams([1884,0,0]);setBlueTeams([0,0,0]);
-        setStrats({auto:{pos:{},strokes:[]},teleop:{pos:{},strokes:[]}});
-        setPreds({});
-      }} className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
-        <RotateCcw className="w-3 h-3"/>Reset Board
-      </button>
     </div>
   );
 }
 
-export default function App(){
+function App(){
   const [tab,setTab]=useState('overview');
   const [match,setMatch]=useState(null);
+  const [eventMatches,setEventMatches]=useState([]);
+  const [matchesLoading,setMatchesLoading]=useState(true);
+  const [matchesError,setMatchesError]=useState('');
+  const saveTimersRef=useRef({});
   const [search,setSearch]=useState('');
   const [dayF,setDayF]=useState('all');
   const [ruleF,setRuleF]=useState('all');
@@ -864,9 +964,85 @@ export default function App(){
 
   useEffect(()=>{try{const s=localStorage.getItem('frc-v11');if(s)setStrats(JSON.parse(s));}catch{}},[]);
   useEffect(()=>{try{localStorage.setItem('frc-v11',JSON.stringify(strats));}catch{}},[strats]);
+  useEffect(()=>{
+    let alive = true;
+    setMatchesLoading(true);
+    setMatchesError('');
+    fetch(`/api/events/${CURRENT_EVENT_KEY}/matches`)
+      .then(function(r){
+        if(!r.ok) throw new Error('Failed to load matches');
+        return r.json();
+      })
+      .then(function(data){
+        if(!alive) return;
+        const nextMatches = (data.matches || []).map(mapApiMatchToLegacy);
+        setEventMatches(nextMatches);
+        if(match){
+          const nextSelected = nextMatches.find(function(m){ return m.match === match.match; });
+          if(nextSelected) setMatch(nextSelected);
+        }
+      })
+      .catch(function(err){
+        if(!alive) return;
+        setMatchesError(err && err.message ? err.message : 'Failed to load matches');
+      })
+      .finally(function(){
+        if(alive) setMatchesLoading(false);
+      });
+    return function(){ alive = false; };
+  },[]);
+
+  useEffect(()=>{
+    if(matchesLoading||eventMatches.length===0) return;
+    let alive = true;
+    fetch(`/api/events/${CURRENT_EVENT_KEY}/strategy-plans?scope=scheduled_match`)
+      .then(function(r){
+        if(!r.ok) throw new Error('Failed to load strategy plans');
+        return r.json();
+      })
+      .then(function(data){
+        if(!alive) return;
+        var loaded = {};
+        (data.strategyPlans || []).forEach(function(plan){
+          var matchObj = eventMatches.find(function(m){ return m.matchKey === plan.matchKey; });
+          if(matchObj) loaded['m'+matchObj.match] = localStratFromPlan(plan);
+        });
+        if(Object.keys(loaded).length>0){
+          setStrats(function(prev){return {...prev,...loaded};});
+        }
+      })
+      .catch(function(_err){});
+    return function(){ alive = false; };
+  },[matchesLoading,eventMatches]);
+
+  useEffect(()=>{
+    return function(){
+      Object.keys(saveTimersRef.current).forEach(function(key){
+        clearTimeout(saveTimersRef.current[key]);
+      });
+    };
+  },[]);
 
   const gm=m=>strats[`m${m}`]||{};
-  const sm=(m,d)=>setStrats(p=>({...p,[`m${m}`]:{...gm(m),...d}}));
+  const queuePlanSave=useCallback(function(matchNumber,nextMatchData){
+    var matchObj = eventMatches.find(function(m){ return m.match === matchNumber; });
+    if(!matchObj||!matchObj.matchKey) return;
+    var saveKey = String(matchNumber);
+    if(saveTimersRef.current[saveKey]) clearTimeout(saveTimersRef.current[saveKey]);
+    saveTimersRef.current[saveKey] = setTimeout(function(){
+      fetch(`/api/events/${CURRENT_EVENT_KEY}/strategy-plans/scheduled_match`,{
+        method:'PUT',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify(strategyPlanPayload(matchObj,nextMatchData))
+      }).catch(function(_err){});
+    },500);
+  },[eventMatches]);
+  const sm=(m,d)=>setStrats(function(p){
+    var key=`m${m}`;
+    var nextMatchData={...(p[key]||{}),...d};
+    queuePlanSave(m,nextMatchData);
+    return {...p,[key]:nextMatchData};
+  });
   const gPhase=(m,ph)=>gm(m)[ph]||{pos:{},strokes:[]};
   const sPhase=(m,ph,d)=>sm(m,{[ph]:d});
   const gp=(m,k)=>(gm(m).preds||{})[k]||0;
@@ -886,17 +1062,19 @@ export default function App(){
     try{navigator.clipboard.writeText(`${location.origin}${location.pathname}?s=${btoa(JSON.stringify(strats))}`);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch{}
   };
 
-  const days=['all','Thu 3/12','Fri 3/13','Sat 3/14'];
+  const scheduleMatches=eventMatches;
+  const days=['all'].concat(Array.from(new Set(scheduleMatches.map(function(m){return m.day;}))));
   const cats=['all',...new Set(RULES.map(r=>r.cat))];
-  const fM=MATCHES.filter(m=>dayF==='all'||m.day===dayF);
+  const fM=scheduleMatches.filter(m=>dayF==='all'||m.day===dayF);
   const fR=ruleF==='all'?RULES:RULES.filter(r=>r.cat===ruleF);
   const fT=TEAMS.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.n.toString().includes(search));
+  const strategyMatches=scheduleMatches;
   const TABS=[{id:'overview',L:'Overview',I:Book},{id:'schedule',L:'Schedule',I:Calendar},{id:'strategy',L:'Strategy',I:Trophy},{id:'freestrat',L:'Free Strat',I:Pencil},{id:'scoring',L:'Scoring',I:CircleDot},{id:'rpcalc',L:'RP Calc',I:Calculator},{id:'pitmap',L:'Pit Map',I:MapPin},{id:'teams',L:'Teams',I:Users},{id:'rules',L:'Rules',I:AlertTriangle}];
 
   return(
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-green-900 text-white">
       <header className="bg-slate-900/90 border-b border-green-500/30 sticky top-0 z-50 p-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center font-black text-black text-sm">FRC</div>
             <div><h1 className="font-bold text-green-400 text-sm">REBUILT 2026</h1><p className="text-xs text-slate-400">Brazil | Mar 12-15</p></div>
@@ -905,7 +1083,7 @@ export default function App(){
         </div>
       </header>
       <nav className="bg-slate-800/50 border-b border-slate-700 overflow-x-auto">
-        <div className="max-w-2xl mx-auto flex gap-1 p-1">
+        <div className="max-w-[1400px] mx-auto flex gap-1 p-1">
           {TABS.map(({id,L,I})=>(
             <button key={id} onClick={()=>setTab(id)} className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium whitespace-nowrap ${tab===id?'bg-green-500 text-white':'text-slate-400 hover:text-white'}`}>
               <I className="w-3 h-3"/>{L}
@@ -914,7 +1092,7 @@ export default function App(){
         </div>
       </nav>
 
-      <main className="max-w-2xl mx-auto p-3">
+      <main className="max-w-[1400px] mx-auto p-3">
 
         {tab==='overview'&&(
           <div className="space-y-3">
@@ -969,6 +1147,8 @@ export default function App(){
             <div className="flex gap-1 flex-wrap">
               {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
             </div>
+            {matchesLoading&&<div className="text-xs text-slate-400">Loading matches...</div>}
+            {!matchesLoading&&matchesError&&<div className="text-xs text-red-400">{matchesError}</div>}
             <div className="space-y-2">
               {fM.map(m=>{
                 const t=total(m.match);const has=!!strats[`m${m.match}`];
@@ -1003,8 +1183,10 @@ export default function App(){
               </button>
             </div>
             <div className="flex flex-wrap gap-1">
-              {MATCHES.map(m=>(<button key={m.match} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>Q{m.match}</button>))}
+              {strategyMatches.map(m=>(<button key={m.match} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>Q{m.match}</button>))}
             </div>
+            {matchesLoading&&<div className="text-xs text-slate-400">Loading strategy matches...</div>}
+            {!matchesLoading&&!match&&strategyMatches.length===0&&<div className="text-xs text-slate-400">No matches loaded.</div>}
 
             {match?(
               <>
@@ -1216,7 +1398,14 @@ export default function App(){
                     );
                   })()}
                 </div>
-                <button onClick={()=>setStrats(p=>{const n={...p};delete n[`m${match.match}`];return n;})}
+                <button onClick={()=>{
+                  setStrats(function(p){
+                    const n={...p};
+                    delete n[`m${match.match}`];
+                    return n;
+                  });
+                  queuePlanSave(match.match,{});
+                }}
                   className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
                   <RotateCcw className="w-3 h-3"/>Reset This Match
                 </button>
