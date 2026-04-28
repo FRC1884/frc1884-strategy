@@ -74,20 +74,18 @@ const SKETCH_COLORS=[
   {id:'yellow',label:'Yellow', hex:'#facc15'},
 ];
 
-const CURRENT_EVENT_KEY = '2026brazil';
-
-function formatMatchDateParts(iso) {
+function formatMatchDateParts(iso, timeZone) {
   if (!iso) return { day:'TBD', time:'TBD' };
   try {
     const d = new Date(iso);
     const day = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Sao_Paulo',
+      timeZone: timeZone || 'UTC',
       weekday: 'short',
       month: 'numeric',
       day: 'numeric'
     }).format(d).replace(',', '');
     const time = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Sao_Paulo',
+      timeZone: timeZone || 'UTC',
       hour: 'numeric',
       minute: '2-digit'
     }).format(d);
@@ -97,12 +95,13 @@ function formatMatchDateParts(iso) {
   }
 }
 
-function mapApiMatchToLegacy(m) {
+function mapApiMatchToStrategyMatch(m, timeZone) {
   const red = (m.alliances && m.alliances.red ? m.alliances.red.teams : []).map(function(t){ return t.teamNumber; });
   const blue = (m.alliances && m.alliances.blue ? m.alliances.blue.teams : []).map(function(t){ return t.teamNumber; });
   const our = red.indexOf(1884) >= 0 ? 'red' : 'blue';
-  const stationEntry = (our === 'red' ? m.alliances.red.teams : m.alliances.blue.teams).find(function(t){ return t.teamNumber === 1884; });
-  const when = formatMatchDateParts(m.scheduledAt);
+  const alliance = our === 'red' ? m.alliances.red.teams : m.alliances.blue.teams;
+  const stationEntry = alliance.find(function(t){ return t.teamNumber === 1884; });
+  const when = formatMatchDateParts(m.scheduledAt, timeZone);
   return {
     matchKey: m.matchKey,
     match: m.matchNumber,
@@ -166,8 +165,8 @@ function localStratFromPlan(plan) {
 
 function defaultPos(m) {
   const p={};
-  m.red.forEach((t,i)=>{p[t]={x:RED_HUB_X-sc(40),y:[R1Y,R2Y,R3Y][i]};});
-  m.blue.forEach((t,i)=>{p[t]={x:BLUE_HUB_X+sc(40),y:[B1Y,B2Y,B3Y][i]};});
+  m.red.forEach((t,i)=>{if(!t)return;p[t]={x:RED_HUB_X-sc(40),y:[R1Y,R2Y,R3Y][i]};});
+  m.blue.forEach((t,i)=>{if(!t)return;p[t]={x:BLUE_HUB_X+sc(40),y:[B1Y,B2Y,B3Y][i]};});
   return p;
 }
 
@@ -369,7 +368,7 @@ function InteractiveMap({ match, positions, setPositions, strokes, activeStroke,
   const hitRobot = useCallback((pt)=>{
     if(!pt) return null;
     const pos=posRef.current;
-    for(const t of [...match.red,...match.blue]){
+    for(const t of [...match.red,...match.blue].filter(t=>t)){
       const p=pos[t]||defaultPos(match)[t]; if(!p) continue;
       const dx=pt.x-p.x,dy=pt.y-p.y;
       if(Math.sqrt(dx*dx+dy*dy)<24) return t;
@@ -430,7 +429,7 @@ function InteractiveMap({ match, positions, setPositions, strokes, activeStroke,
         return <path key={i} d={d} stroke={s.color} strokeWidth={s.width||3.5} strokeLinecap="round" strokeLinejoin="round" fill="none" opacity={0.9}/>;
       })}
       {/* Robots */}
-      {[...match.red,...match.blue].map(team=>{
+      {[...match.red,...match.blue].filter(t=>t).map(team=>{
         const p=pos[team]||defaultPos(match)[team]; if(!p) return null;
         const isRed=match.red.includes(team);
         const idx=(isRed?match.red:match.blue).indexOf(team);
@@ -667,21 +666,306 @@ var SCOUT_DATA = {
     notes:"Cannot intake or shoot at all. Strategy is pushing/sweeping balls over to alliance side. Gets stuck on ramp. Did not move in auto any match."},
 };
 
+// === NEWTON DIVISION (Houston, Apr 29 - May 2, 2026) =========================
+
+var NEWTON_TEAMS = [
+  {n:88,    name:"TJ²",                  loc:"Bridgewater, MA",        pit:"Q07"},
+  {n:148,   name:"Robowranglers",             loc:"Greenville, TX",         pit:"P24"},
+  {n:180,   name:"S.P.A.M.",                  loc:"Stuart, FL",             pit:"P04"},
+  {n:195,   name:"CyberKnights",              loc:"Southington, CT",        pit:"P27"},
+  {n:233,   name:"The Pink Team",             loc:"Rockledge, FL",          pit:"P10"},
+  {n:341,   name:"Miss Daisy",                loc:"Ambler, PA",             pit:"R11"},
+  {n:346,   name:"RoboHawks",                 loc:"Richmond, VA",           pit:"P17"},
+  {n:386,   name:"Team Voltage",              loc:"Melbourne, FL",          pit:"Q05"},
+  {n:424,   name:"Rust Belt Robotics",        loc:"Buffalo, NY",            pit:"Q09"},
+  {n:599,   name:"The Robodox",               loc:"Granada Hills, CA",      pit:"P11"},
+  {n:604,   name:"Quixilver",                 loc:"San Jose, CA",           pit:"P26"},
+  {n:687,   name:"The Nerd Herd",             loc:"Carson, CA",             pit:"Q24"},
+  {n:695,   name:"Bison Robotics",            loc:"Beachwood, OH",          pit:"R16"},
+  {n:818,   name:"The Steel Armadillos",      loc:"Warren, MI",             pit:"N15"},
+  {n:868,   name:"TechHOUNDS",                loc:"Carmel, IN",             pit:"Q25"},
+  {n:930,   name:"Mukwonago BEARs",           loc:"Mukwonago, WI",          pit:"Q15"},
+  {n:948,   name:"NRG",                       loc:"Bellevue, WA",           pit:"N06"},
+  {n:973,   name:"Greybots",                  loc:"Atascadero, CA",         pit:"P08"},
+  {n:1108,  name:"Panther Robotics",          loc:"Paola, KS",              pit:"N28"},
+  {n:1540,  name:"Flaming Chickens",          loc:"Portland, OR",           pit:"R12"},
+  {n:1577,  name:"Steampunk",                 loc:"Raanana, Israel",        pit:"Q04"},
+  {n:1796,  name:"RoboTigers",                loc:"Queens, NY",             pit:"P05"},
+  {n:1807,  name:"Redbird Robotics",          loc:"Allentown, NJ",          pit:"N25"},
+  {n:1833,  name:"Team BEAN",                 loc:"Cumming, GA",            pit:"P15"},
+  {n:1884,  name:"Griffins",                  loc:"London, UK",             pit:"N11", us:true},
+  {n:1902,  name:"Exploding Bacon",           loc:"Orlando, FL",            pit:"N24"},
+  {n:1922,  name:"Oz-Ram",                    loc:"Contoocook, NH",         pit:"N27"},
+  {n:2046,  name:"Bear Metal",                loc:"Maple Valley, WA",       pit:"N09"},
+  {n:2052,  name:"KnightKrawler",             loc:"New Brighton, MN",       pit:"N17"},
+  {n:2067,  name:"Apple Pi",                  loc:"Guilford, CT",           pit:"N08"},
+  {n:2194,  name:"Fondy Fire",                loc:"Fond du Lac, WI",        pit:"Q26"},
+  {n:2370,  name:"IBOTS",                     loc:"Rutland, VT",            pit:"P18"},
+  {n:2586,  name:"Copper Bots",               loc:"Calumet, MI",            pit:"R23"},
+  {n:2713,  name:"Red Hawk Robotics",         loc:"Melrose, MA",            pit:"Q12"},
+  {n:2783,  name:"Engineers of Tomorrow",     loc:"La Grange, KY",          pit:"P07"},
+  {n:2910,  name:"Jack in the Bot",           loc:"Mill Creek, WA",         pit:"R13"},
+  {n:2996,  name:"Cougars Gone Wired",        loc:"Colorado Springs, CO",   pit:"Q13"},
+  {n:3005,  name:"RoboChargers",              loc:"Dallas, TX",             pit:"P09"},
+  {n:3044,  name:"Team 0xBE4",                loc:"Ballston Spa, NY",       pit:"N14"},
+  {n:3256,  name:"WarriorBorgs",              loc:"San Jose, CA",           pit:"R18"},
+  {n:3276,  name:"TOOLCATS",                  loc:"New London-Spicer, MN",  pit:"P23"},
+  {n:3354,  name:"PrepaTec - TecDroid",       loc:"Querétaro, Mexico", pit:"Q08"},
+  {n:3966,  name:"Gryphon Command",           loc:"Knoxville, TN",          pit:"N05"},
+  {n:4099,  name:"The Falcons",               loc:"Poolesville, MD",        pit:"Q03"},
+  {n:4206,  name:"Robo Vikes",                loc:"Fort Worth, TX",         pit:"R03"},
+  {n:4253,  name:"Raid Zero",                 loc:"Taipei, Chinese Taipei", pit:"P13"},
+  {n:4400,  name:"Cerbotics - Peñoles",  loc:"Torreón, Mexico",   pit:"Q11"},
+  {n:4561,  name:"TerrorBytes",               loc:"Research Triangle, NC",  pit:"P12"},
+  {n:4590,  name:"GreenBlitz",                loc:"Hakfar Hayarok, Israel", pit:"Q17"},
+  {n:5216,  name:"E-Ville Empire",            loc:"Essexville, MI",         pit:"N13"},
+  {n:5414,  name:"Pearadox",                  loc:"Pearland, TX",           pit:"N16"},
+  {n:5549,  name:"Gryphon Robotics",          loc:"Falls Church, VA",       pit:"N23"},
+  {n:5736,  name:"Kingsmen Robotics",         loc:"Kings Park, NY",         pit:"R08"},
+  {n:5948,  name:"PrepaTec - Lebotics",       loc:"Cuernavaca, Mexico",     pit:"Q18"},
+  {n:5951,  name:"Makers Assemble",           loc:"Tel Aviv, Israel",       pit:"N07"},
+  {n:6036,  name:"Peninsula Robotics",        loc:"Palo Alto, CA",          pit:"N26"},
+  {n:6352,  name:"LAUNCH TEAM",               loc:"Surprise, AZ",           pit:"Q23"},
+  {n:6436,  name:"NARBULUT PARS",             loc:"Istanbul, Türkiye", pit:"P06"},
+  {n:6647,  name:"PrepaTec - VOLTEC",         loc:"Monterrey, Mexico",      pit:"R14"},
+  {n:6988,  name:"ACI35",                     loc:"Izmir, Türkiye",    pit:"R09"},
+  {n:7160,  name:"Ludington O-Bots",          loc:"Ludington, MI",          pit:"R07"},
+  {n:8046,  name:"LakerBots",                 loc:"Meredith, NH",           pit:"Q10"},
+  {n:8373,  name:"The Flying Octopi",         loc:"Blissfield, MI",         pit:"P25"},
+  {n:9029,  name:"Team NF",                   loc:"Ankara, Türkiye",   pit:"R25"},
+  {n:9067,  name:"The Goonies",               loc:"Searcy, AR",             pit:"Q14"},
+  {n:9128,  name:"ITKAN Robotics",            loc:"Plano, TX",              pit:"Q16"},
+  {n:9245,  name:"Laker Dreadnoughts",        loc:"Pigeon, MI",             pit:"Q06"},
+  {n:9408,  name:"Warren Warbots",            loc:"Downey, CA",             pit:"R17"},
+  {n:9450,  name:"Velocity Raptors",          loc:"Woodinville, WA",        pit:"N18"},
+  {n:10291, name:"MUTUM-X",                   loc:"Nova Mutum, Brazil",     pit:"P14"},
+  {n:10553, name:"Orange Overdrive",          loc:"Oregon, WI",             pit:"R06"},
+  {n:10903, name:"The Ionizers",              loc:"Reno, NV",               pit:"P16"},
+  {n:10935, name:"Krono",                     loc:"Kiryat Ono, Israel",     pit:"R15"},
+  {n:10979, name:"Tiger Robotics",            loc:"Philadelphia, PA",       pit:"R05"},
+  {n:11463, name:"SHC Robotics",              loc:"San Francisco, CA",      pit:"N12"},
+];
+
+var NEWTON_TIERS = [
+  {id:'all', label:'All',      cls:'bg-green-500/20 text-green-300 border-green-500/40'},
+  {id:'S',   label:'Best',     cls:'bg-red-500/20 text-red-300 border-red-500/40'},
+  {id:'A',   label:'Good',     cls:'bg-orange-500/20 text-orange-300 border-orange-500/40'},
+  {id:'B',   label:'Mid',      cls:'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'},
+  {id:'U',   label:'Unknown',  cls:'bg-slate-700 text-slate-300 border-slate-600'},
+];
+
+// === NEWTON_SCOUT — built from pre-Champs statbotics + scout form ===
+// Tier cutoffs (EPA-driven): S 200+, A 150-199, B 110-149, U <110
+// Generated 2026-04-28 from CSVs. Re-run scout-data builder if more data comes in.
+var NEWTON_SCOUT = {
+  2046: {tier:'S', epa:301, warn:false, notes:'EPA 301 (auto 62, teleop 172, endgame 67) • turret | 12+ balls/s | trench, bump • no climb | def 4/5 • — Darcy • [Pre-champs — may be outdated]'},
+  9128: {tier:'S', epa:283, warn:true, notes:'EPA 283 (auto 70, teleop 157, endgame 57) • fixed | 12+ balls/s | trench, bump • no climb • Issues: Note: scoring says 12+, but they scored ~30/s EASY TO DEFEND (relative to points scored) EASILY BEACHED!!!!! • — Shivan • [Pre-champs — may be outdated]'},
+  1796: {tier:'S', epa:251, warn:false, notes:'EPA 251 (auto 45, teleop 152, endgame 54) • turret | 9-12 balls/s | trench, bump • no climb • — Adam Wahbeh • [Pre-champs — may be outdated]'},
+  1833: {tier:'S', epa:247, warn:false, notes:'EPA 247 (auto 57, teleop 146, endgame 43) • fixed | 3-6 balls/s | trench • climbs | def 4/5 • Issues: Slightly slower cycle time compared to elite shooters Needs time to line up accurate shots Can get disrupted by defense while lining up • — Keyah • [Pre-champs — may be outdated]'},
+  5736: {tier:'S', epa:226, warn:false, notes:'EPA 226 (auto 64, teleop 116, endgame 46) • fixed | 3-6 balls/s | trench • climbs L3 | def 4/5 • Issues: Their team relies heavily on fast offensive cycles. strong defense can slow their overall performance. They sometimes spend extra time lining up accurate shots before scoring. C... • — Violet Jameson Evans • [Pre-champs — may be outdated]'},
+  180: {tier:'S', epa:221, warn:false, notes:'EPA 221 (auto 53, teleop 120, endgame 48) • [Pre-champs — may be outdated]'},
+  2910: {tier:'S', epa:211, warn:false, notes:'EPA 211 (auto 37, teleop 119, endgame 54) • fixed | 9-12 balls/s | bump • no climb • Issues: seems to have a fixed shooter, so when a dbot bumps into them, it may slow them down a little. but their shooter is reaaalllyy fast (shoots multiple balls at a time, like the WC... • — Kiyoshi • [Pre-champs — may be outdated]'},
+  195: {tier:'S', epa:206, warn:false, notes:'EPA 206 (auto 58, teleop 103, endgame 45) • fixed | 3-6 balls/s | trench • climbs L3 | def 3/5 • Issues: Occasionally takes time to line up shots Slight delay between ball collection and shooting Not the fastest cycling compared to top teams • — Keyah • [Pre-champs — may be outdated]'},
+  604: {tier:'S', epa:203, warn:false, notes:'EPA 203 (auto 39, teleop 117, endgame 46) • turret | 9-12 balls/s | bump • no climb • — Ranger • [Pre-champs — may be outdated]'},
+  695: {tier:'S', epa:201, warn:false, notes:'EPA 201 (auto 40, teleop 106, endgame 55) • turret | 3-6 balls/s | trench • climbs L3 | def 3/5 • Issues: The robot sometimes struggles with shot consistency when defended heavily. It can take extra time to line up accurate shots, and strong defensive pressure can slow down cycling.... • — Violet Jameson Evans • [Pre-champs — may be outdated]'},
+  2067: {tier:'A', epa:194, warn:true, notes:'EPA 194 (auto 42, teleop 104, endgame 49) • fixed | 9-12 balls/s | bump • no climb • Issues: Notes: Captain of Alliance 7 in one regional, and 1st pick of 1st and 2nd alliances in other regionals; won 1 regional.  Also, can ONLY go over bump despite being one of the bes... • — Shivan • [Pre-champs — may be outdated]'},
+  6036: {tier:'A', epa:190, warn:true, notes:'EPA 190 (auto 44, teleop 106, endgame 39) • fixed | 6-9 balls/s | bump • no climb | def 3/5 | ferry 4/5 • Issues: nearly got beached ~0:45; not a weakness, but they tend to ferry • — Kiyoshi Yoshino • [Pre-champs — may be outdated]'},
+  6647: {tier:'A', epa:188, warn:false, notes:'EPA 188 (auto 34, teleop 111, endgame 42) • fixed | 9-12 balls/s | bump • no climb • Issues: No • — Oscar • [Pre-champs — may be outdated]'},
+  973: {tier:'A', epa:188, warn:false, notes:'EPA 188 (auto 46, teleop 100, endgame 42) • [Pre-champs — may be outdated]'},
+  599: {tier:'A', epa:187, warn:false, notes:'EPA 187 (auto 40, teleop 116, endgame 31) • fixed | 6-9 balls/s | bump • no climb • Issues: Note: Secondary shooter, average • — Shivan • [Pre-champs — may be outdated]'},
+  1540: {tier:'A', epa:186, warn:false, notes:'EPA 186 (auto 45, teleop 103, endgame 38) • turret | 9-12 balls/s | trench • no climb • Issues: no • — Rani • [Pre-champs — may be outdated]'},
+  4400: {tier:'A', epa:186, warn:false, notes:'EPA 186 (auto 28, teleop 117, endgame 42) • [Pre-champs — may be outdated]'},
+  341: {tier:'A', epa:179, warn:false, notes:'EPA 179 (auto 37, teleop 104, endgame 38) • turret | 6-9 balls/s | trench, bump • no climb | def 4/5 • — Rish • [Pre-champs — may be outdated]'},
+  3256: {tier:'A', epa:179, warn:true, notes:'EPA 179 (auto 46, teleop 85, endgame 48) • turret | 12+ balls/s | bump • no climb • Issues: got stuck • — Rani • [Pre-champs — may be outdated]'},
+  88: {tier:'A', epa:176, warn:false, notes:'EPA 176 (auto 44, teleop 95, endgame 38) • [Pre-champs — may be outdated]'},
+  148: {tier:'A', epa:170, warn:false, notes:'EPA 170 (auto 33, teleop 95, endgame 42) • turret | 6-9 balls/s | trench, bump • no climb | def 3/5 • — Adam Wahbeh • [Pre-champs — may be outdated]'},
+  9408: {tier:'A', epa:166, warn:false, notes:'EPA 166 (auto 34, teleop 90, endgame 42) • [Pre-champs — may be outdated]'},
+  2783: {tier:'A', epa:163, warn:false, notes:'EPA 163 (auto 26, teleop 90, endgame 48) • turret | 3-6 balls/s | trench • no climb | def 3/5 • — Ara Edun • [Pre-champs — may be outdated]'},
+  2996: {tier:'A', epa:160, warn:false, notes:'EPA 160 (auto 34, teleop 88, endgame 38) • fixed | 3-6 balls/s | trench, bump • no climb • Issues: just a slow robot • — Asa • [Pre-champs — may be outdated]'},
+  2052: {tier:'A', epa:157, warn:false, notes:'EPA 157 (auto 32, teleop 91, endgame 34) • fixed | 12+ balls/s | trench • no climb | def 4/5 • Issues: Gets suck on trench cause its too tall. • — Felipe Caseiras • [Pre-champs — may be outdated]'},
+  4206: {tier:'A', epa:155, warn:false, notes:'EPA 155 (auto 22, teleop 99, endgame 33) • [Pre-champs — may be outdated]'},
+  948: {tier:'A', epa:154, warn:false, notes:'EPA 154 (auto 36, teleop 83, endgame 35) • fixed | 6-9 balls/s | bump • no climb No climb • Issues: Nope • — Asa • [Pre-champs — may be outdated]'},
+  2713: {tier:'A', epa:153, warn:false, notes:'EPA 153 (auto 24, teleop 94, endgame 35) • [Pre-champs — may be outdated]'},
+  4099: {tier:'B', epa:146, warn:true, notes:'EPA 146 (auto 39, teleop 74, endgame 33) • fixed | 1-3 balls/s | trench • attempted, but unsuccessful L1 | def 2/5 • Issues: Slower intake and shooting cycle Takes time to aim accurately Can be disrupted easily by defense Occasional ball control issues • — Keyah • [Pre-champs — may be outdated]'},
+  8046: {tier:'B', epa:143, warn:false, notes:'EPA 143 (auto 24, teleop 84, endgame 35) • [Pre-champs — may be outdated]'},
+  687: {tier:'B', epa:143, warn:true, notes:'EPA 143 (auto 35, teleop 78, endgame 29) • fixed | 6-9 balls/s | trench, bump • no climb | def 2/5 • Issues: Seemed like they had some issues intaking and got stuck shortly a couple times • — Benji • [Pre-champs — may be outdated]'},
+  2370: {tier:'B', epa:142, warn:false, notes:'EPA 142 (auto 32, teleop 80, endgame 30) • turret | 3-6 balls/s | trench • no climb | def 2/5 • Issues: slow shooting, intake not great • — Benji • [Pre-champs — may be outdated]'},
+  346: {tier:'B', epa:140, warn:false, notes:'EPA 140 (auto 18, teleop 92, endgame 30) • [Pre-champs — may be outdated]'},
+  1922: {tier:'B', epa:139, warn:false, notes:'EPA 139 (auto 22, teleop 79, endgame 38) • [Pre-champs — may be outdated]'},
+  2194: {tier:'B', epa:138, warn:false, notes:'EPA 138 (auto 40, teleop 81, endgame 18) • fixed | 3-6 balls/s | bump • no climb • — Ranger • [Pre-champs — may be outdated]'},
+  3005: {tier:'B', epa:136, warn:false, notes:'EPA 136 (auto 25, teleop 73, endgame 38) • [Pre-champs — may be outdated]'},
+  6436: {tier:'B', epa:130, warn:false, notes:'EPA 130 (auto 20, teleop 73, endgame 38) • [Pre-champs — may be outdated]'},
+  8373: {tier:'B', epa:129, warn:false, notes:'EPA 129 (auto 13, teleop 73, endgame 43) • [Pre-champs — may be outdated]'},
+  9245: {tier:'B', epa:129, warn:false, notes:'EPA 129 (auto 39, teleop 60, endgame 31) • [Pre-champs — may be outdated]'},
+  233: {tier:'B', epa:128, warn:false, notes:'EPA 128 (auto 16, teleop 70, endgame 42) • [Pre-champs — may be outdated]'},
+  4561: {tier:'B', epa:127, warn:true, notes:'EPA 127 (auto 23, teleop 73, endgame 31) • fixed | 3-6 balls/s | trench, bump • climbs L1 | def 2/5 • Issues: struggle and get stuck under trench and stuck on bump, their aim was quite off and managed to shoot accuratly • — Darcy • [Pre-champs — may be outdated]'},
+  5948: {tier:'B', epa:127, warn:false, notes:'EPA 127 (auto 19, teleop 81, endgame 27) • [Pre-champs — may be outdated]'},
+  1108: {tier:'B', epa:127, warn:false, notes:'EPA 127 (auto 16, teleop 77, endgame 34) • fixed | 3-6 balls/s | bump • no climb | def 3/5 • Issues: No • — Oscar • [Pre-champs — may be outdated]'},
+  3276: {tier:'B', epa:126, warn:false, notes:'EPA 126 (auto 25, teleop 80, endgame 21) • [Pre-champs — may be outdated]'},
+  930: {tier:'B', epa:122, warn:true, notes:'EPA 122 (auto 13, teleop 74, endgame 36) • fixed | 1-3 balls/s | bump • no climb • Issues: got beached once (~1:05 in the match), pretty slow, shoots really slow (at the start they shot only one ball per ~4ish seconds). • — Kiyoshi • [Pre-champs — may be outdated]'},
+  868: {tier:'B', epa:122, warn:false, notes:'EPA 122 (auto 24, teleop 67, endgame 30) • turret | 3-6 balls/s | bump • no climb | def 3/5 • — Ara Edun • [Pre-champs — may be outdated]'},
+  5549: {tier:'B', epa:120, warn:false, notes:'EPA 120 (auto 20, teleop 65, endgame 36) • fixed | 3-6 balls/s | trench • no climb | def 2/5 • Issues: not really • — Benji • [Pre-champs — may be outdated]'},
+  7160: {tier:'B', epa:118, warn:false, notes:'EPA 118 (auto 18, teleop 64, endgame 37) • [Pre-champs — may be outdated]'},
+  424: {tier:'B', epa:117, warn:false, notes:'EPA 117 (auto 24, teleop 65, endgame 28) • fixed | 3-6 balls/s | trench, bump • no climb • Issues: Clunky, not at all agile, super slow, it can bearly go under trench, seemly hard to aim. • — Felipe Caseiras • [Pre-champs — may be outdated]'},
+  3966: {tier:'B', epa:116, warn:false, notes:'EPA 116 (auto 16, teleop 75, endgame 26) • [Pre-champs — may be outdated]'},
+  9450: {tier:'U', epa:109, warn:false, notes:'EPA 109 (auto 19, teleop 63, endgame 27) • [Pre-champs — may be outdated]'},
+  386: {tier:'U', epa:108, warn:false, notes:'EPA 108 (auto 17, teleop 63, endgame 28) • turret | 6-9 balls/s | trench • no climb | def 2/5 • — Darcy • [Pre-champs — may be outdated]'},
+  3354: {tier:'U', epa:106, warn:false, notes:'EPA 106 (auto 16, teleop 61, endgame 29) • fixed | 9-12 balls/s | trench • no climb • — Adam Wahbeh • [Pre-champs — may be outdated]'},
+  9029: {tier:'U', epa:101, warn:false, notes:'EPA 101 (auto 25, teleop 60, endgame 15) • [Pre-champs — may be outdated]'},
+  818: {tier:'U', epa:99, warn:false, notes:'EPA 99 (auto 28, teleop 52, endgame 19) • [Pre-champs — may be outdated]'},
+  3044: {tier:'U', epa:92, warn:false, notes:'EPA 92 (auto 18, teleop 51, endgame 22) • turret | 1-3 balls/s | trench • no climb | def 3/5 • Issues: This is just a note: It is a fairy bot • — Oscar • [Pre-champs — may be outdated]'},
+  5216: {tier:'U', epa:89, warn:true, notes:'EPA 89 (auto 27, teleop 42, endgame 21) • fixed | 1-3 balls/s | trench • no climb | def 2/5 • Issues: Can\'t go through bump, tried once and was very easily beached Note: doesn\'t shoot at all, just very ineffective d-bot • — Shivan • [Pre-champs — may be outdated]'},
+  5951: {tier:'U', epa:86, warn:false, notes:'EPA 86 (auto 19, teleop 46, endgame 21) • fixed | 9-12 balls/s | trench, bump • no climb | def 4/5 • Issues: May potentially have defencded their own teamates. • — Ara Edun • [Pre-champs — may be outdated]'},
+  2586: {tier:'U', epa:80, warn:false, notes:'EPA 80 (auto 15, teleop 42, endgame 22) • fixed | 3-6 balls/s | trench • climbs L3 | def 4/5 • Issues: The robot is generally consistent. Occasionally there is traffic near the loading zone which slows intake efficiency, and the climbing setup can require extra positioning time. • — Violet Jameson Evans • [Pre-champs — may be outdated]'},
+  5414: {tier:'U', epa:77, warn:false, notes:'EPA 77 (auto 19, teleop 33, endgame 25) • turret | 3-6 balls/s | trench • no climb | def 3/5 • — Ranger • [Pre-champs — may be outdated]'},
+  10903: {tier:'U', epa:73, warn:false, notes:'EPA 73 (auto 16, teleop 38, endgame 18) • [Pre-champs — may be outdated]'},
+  1807: {tier:'U', epa:69, warn:false, notes:'EPA 69 (auto 17, teleop 32, endgame 20) • [Pre-champs — may be outdated]'},
+  1577: {tier:'U', epa:69, warn:false, notes:'EPA 69 (auto 15, teleop 37, endgame 17) • [Pre-champs — may be outdated]'},
+  10553: {tier:'U', epa:66, warn:false, notes:'EPA 66 (auto 18, teleop 36, endgame 12) • [Pre-champs — may be outdated]'},
+  4590: {tier:'U', epa:61, warn:false, notes:'EPA 61 (auto 13, teleop 33, endgame 15) • fixed | 9-12 balls/s | bump • no climb | def 3/5 • Issues: Cant go on trench, boxy, clunky, no auto. • — Felipe Caseiras • [Pre-champs — may be outdated]'},
+  10291: {tier:'U', epa:50, warn:false, notes:'EPA 50 (auto 20, teleop 18, endgame 12) • [Pre-champs — may be outdated]'},
+  1902: {tier:'U', epa:49, warn:true, notes:'EPA 49 (auto 7, teleop 25, endgame 17) • fixed | 1-3 balls/s | trench • no climb | def 1/5 • Issues: Trouble going under trench, it seems like they barely make it under. Also I watched two matches because they did nothing in the first one and they also didn\'t do much in the sec... • — Rish • [Pre-champs — may be outdated]'},
+  4253: {tier:'U', epa:47, warn:false, notes:'EPA 47 (auto 12, teleop 29, endgame 6) • turret | 12+ balls/s | trench, bump • no climb | def 3/5 • Issues: Good robot, mid drive team • — Rish • [Pre-champs — may be outdated]'},
+  9067: {tier:'U', epa:41, warn:false, notes:'EPA 41 (auto 9, teleop 24, endgame 9) • [Pre-champs — may be outdated]'},
+  6352: {tier:'U', epa:38, warn:false, notes:'EPA 38 (auto 8, teleop 23, endgame 7) • fixed | 3-6 balls/s | bump • no climb no • Issues: Just a slower robot to begin with • — Asa • [Pre-champs — may be outdated]'},
+  10979: {tier:'U', epa:37, warn:false, notes:'EPA 37 (auto 7, teleop 20, endgame 10) • [Pre-champs — may be outdated]'},
+  1884: {tier:'U', epa:25, warn:false, notes:'EPA 25 (auto 4, teleop 15, endgame 6) • [Pre-champs — may be outdated]'},
+  10935: {tier:'U', epa:24, warn:false, notes:'EPA 24 (auto 5, teleop 13, endgame 6) • [Pre-champs — may be outdated]'},
+  11463: {tier:'U', epa:23, warn:false, notes:'EPA 23 (auto 5, teleop 12, endgame 6) • [Pre-champs — may be outdated]'},
+  6988: {tier:'U', epa:21, warn:true, notes:'EPA 21 (auto 6, teleop 14, endgame 1) • turret | 1-3 balls/s | didn\'t move at all • no climb • Issues: stuck • — Rani • [Pre-champs — may be outdated]'},
+};
+
+// Newton pit grid bays. Each bay is array-of-columns; each column is top-to-bottom.
+// "COL" = structural pillar, "INSP" = inspection station, 0 = empty slot.
+var NEWTON_TOP_1 = [[1922, 1807, 5549]];
+var NEWTON_TOP_2 = [[1108, 6036, 1902],[195, 8373, 3276]];
+var NEWTON_TOP_3 = [[604, 148],[868, 6352]];
+var NEWTON_TOP_4 = [[2194, 687],[9029, 2586]];
+var NEWTON_BOT_1 = [[2052, 818, 5216, 1884, 2046, 5951, 3966, "INSP", "INSP"]];
+var NEWTON_BOT_2 = [
+  [9450, 5414, 3044, 11463, "COL", 2067, 948,  "INSP", "INSP"],
+  [346,  1833, 4253, 599,   3005,  2783, 1796, "INSP", "INSP"]
+];
+var NEWTON_BOT_3 = [
+  [2370, 10903, 10291, 4561, 233,  973, 6436, 180],
+  [4590, 930,   2996,  4400, 424,  88,  386,  4099]
+];
+var NEWTON_BOT_4 = [
+  [5948, 9128,  9067, 2713, 8046, 3354, 9245,  1577],
+  [9408, 10935, 2910, 341,  6988, 7160, 10979, 4206]
+];
+var NEWTON_BOT_5 = [[3256, 695, 6647, 1540, "COL", 5736, 10553]];
+
+var NEWTON_PITCH = {
+  title: "Our pitch to alliance captains",
+  paragraphs: [
+    {h:"What we do.",        body:"Premium defence. Long rectangle. Fast, agile, drivers who can pin clean within G418 and re-engage without penalty. We don't shoot, we don't store, we don't climb."},
+    {h:"What we offer.",     body:"Pick us third and your two scorers' biggest problem - the opponents' best fuel scorer - disappears. We chase, we pin, we deny lanes. We draw fouls and we don't earn them."},
+    {h:"Who should pick us.",body:"Captains who already have two strong scorers and a Level 2/3 climber and want their #16-#22 to lock down the opposing alliance. We're the bodyguard, not the goalscorer."}
+  ]
+};
+
+var PLACEHOLDER_MATCHES = [
+  {match:1,  day:"Wed 4/29", time:"9:00 AM",  red:[148,386,4253],   blue:[180,233,599]},
+  {match:2,  day:"Wed 4/29", time:"9:45 AM",  red:[1884,2046,5414], blue:[341,4590,973],   our:'red',  stn:1},
+  {match:3,  day:"Wed 4/29", time:"10:30 AM", red:[1577,2067,8046], blue:[1540,2713,3005]},
+  {match:4,  day:"Wed 4/29", time:"11:15 AM", red:[604,5549,3354],  blue:[5951,1884,2052], our:'blue', stn:2},
+  {match:5,  day:"Thu 4/30", time:"9:00 AM",  red:[1902,1540,1884], blue:[687,195,6647],   our:'red',  stn:3},
+  {match:6,  day:"Thu 4/30", time:"10:00 AM", red:[346,5414,233],   blue:[2052,4253,386]},
+  {match:7,  day:"Thu 4/30", time:"11:30 AM", red:[3966,599,4590],  blue:[1884,148,5951],  our:'blue', stn:1},
+  {match:8,  day:"Thu 4/30", time:"1:30 PM",  red:[180,8046,2067],  blue:[341,1577,6647]},
+  {match:9,  day:"Fri 5/1",  time:"9:30 AM",  red:[2713,1884,1540], blue:[5549,4253,4590], our:'red',  stn:2},
+  {match:10, day:"Fri 5/1",  time:"10:45 AM", red:[148,1577,5414],  blue:[180,233,1902]},
+  {match:11, day:"Fri 5/1",  time:"11:30 AM", red:[2052,5951,386],  blue:[604,2046,1884],  our:'blue', stn:3},
+  {match:12, day:"Fri 5/1",  time:"1:00 PM",  red:[341,3354,8046],  blue:[2783,599,3005]}
+];
+
+// === EVENT REGISTRY ==========================================================
+// Single source of truth for event-specific data. Tabs read currentEvent.* via App.
+var EVENTS = {
+  brazil: {
+    id: 'brazil',
+    label: 'Brazil 2026',
+    subtitle: 'Mar 12-15',
+    location: 'SESI Osasco, SP Brazil',
+    dates: 'Mar 12-15, 2026',
+    teamCount: 51,
+    fieldType: 'AndyMark field',
+    matches: MATCHES,
+    teams: TEAMS,
+    scout: SCOUT_DATA,
+    pitGrid: { T01_LEFT, T01_RIGHT, T01_BOT_L, T01_BOT_R, T03_LEFT, T03_RIGHT, T03_BOT_L, T03_BOT_R },
+    pitGridLayout: 'brazil',
+    overviewBlurb: { type: 'no-climb' },
+    rules: RULES,
+    storageKey: 'frc-v12-brazil',
+    scheduleIsPlaceholder: false,
+    apiEventKey: '2026brazil',
+    apiTimeZone: 'America/Sao_Paulo',
+  },
+  newton: {
+    id: 'newton',
+    label: 'Newton 2026',
+    subtitle: 'Apr 29 - May 2',
+    location: 'George R. Brown Convention Center, Houston, TX',
+    dates: 'Apr 29 - May 2, 2026',
+    teamCount: 75,
+    fieldType: 'AndyMark field',
+    matches: PLACEHOLDER_MATCHES,
+    teams: NEWTON_TEAMS,
+    scout: NEWTON_SCOUT,
+    pitGrid: { NEWTON_TOP_1, NEWTON_TOP_2, NEWTON_TOP_3, NEWTON_TOP_4, NEWTON_BOT_1, NEWTON_BOT_2, NEWTON_BOT_3, NEWTON_BOT_4, NEWTON_BOT_5 },
+    pitGridLayout: 'newton',
+    overviewBlurb: { type: 'defender' },
+    rules: RULES,
+    storageKey: 'frc-v12-newton',
+    scheduleIsPlaceholder: true,
+    tiers: NEWTON_TIERS,
+    pitch: NEWTON_PITCH,
+  },
+};
+
 function PitBox(props){
   var n=props.n; var popup=props.popup; var setPopup=props.setPopup; var sq=props.sq;
-  if(!n) return <div style={{width:56,height:46}}/>;
+  var mode=props.mode||'brazil';
+  var tierFilter=props.tierFilter||'all';
+  var cellH=mode==='newton'?66:46;
+  if(!n) return <div style={{width:56,height:cellH}}/>;
+  if(n==="COL") return <div style={{width:56,height:cellH}} className="rounded flex items-center justify-center font-bold border-2 bg-slate-900 text-slate-500 border-slate-700 text-xs">COL</div>;
+  if(n==="INSP") return <div style={{width:56,height:cellH}} className="rounded flex items-center justify-center font-bold border-2 bg-slate-600/30 text-slate-400 border-slate-500/40"><span style={{fontSize:9}}>INSP</span></div>;
   var isUs=n===1884;
+  var src=mode==='newton'?NEWTON_TEAMS:TEAMS;
   var teamObj=null;
-  for(var i=0;i<TEAMS.length;i++){if(TEAMS[i].n===n){teamObj=TEAMS[i];break;}}
-  var hl=sq&&(n.toString().indexOf(sq)>=0||(teamObj?teamObj.name.toLowerCase().indexOf(sq)>=0:false));
-  var hasS=!!SCOUT_DATA[n];
+  for(var i=0;i<src.length;i++){if(src[i].n===n){teamObj=src[i];break;}}
+  var hl=sq&&(String(n).indexOf(sq)>=0||(teamObj?teamObj.name.toLowerCase().indexOf(sq)>=0:false));
   var open=popup===n;
+  var bg=isUs?'bg-yellow-400 text-black border-yellow-300':hl?'bg-green-500 text-white border-green-300':'bg-amber-800/70 text-amber-100 border-amber-600';
+  var openRing=open?'ring-2 ring-white':'';
+  if(mode==='newton'){
+    var scoutEntry=teamObj&&!teamObj.us?NEWTON_SCOUT[teamObj.n]:null;
+    var tier=scoutEntry?scoutEntry.tier:null;
+    var tierColors={S:'text-red-300',A:'text-orange-300',B:'text-yellow-300',U:'text-slate-300'};
+    var tierWords={S:'Best',A:'Good',B:'Mid',U:'Unknown'};
+    var dimmed=tierFilter!=='all'&&!isUs&&tier!==tierFilter;
+    var rawName=teamObj?teamObj.name:'';
+    var displayName=rawName.length>8?rawName.slice(0,8)+'…':rawName;
+    var line3=isUs?'YOU':(tier?tierWords[tier]:'');
+    var line3Color=isUs?'text-black':(tierColors[tier]||'text-slate-400');
+    return (
+      <button onClick={function(){setPopup(open?null:n);}}
+        style={{width:56,height:cellH}}
+        className={"rounded flex flex-col items-center justify-center border-2 transition-all active:scale-95 shrink-0 leading-tight "+bg+" "+openRing+(dimmed?' opacity-30':'')}>
+        <span style={{fontSize:9}} className="font-black">{n}</span>
+        {displayName&&<span style={{fontSize:8}} className="font-semibold opacity-90">{displayName}</span>}
+        {line3&&<span style={{fontSize:8}} className={"font-bold "+line3Color}>{line3}</span>}
+      </button>
+    );
+  }
+  var hasS=!!SCOUT_DATA[n];
   var stars=hasS?SCOUT_DATA[n].stars:0;
   var starStr='';
   for(var s=0;s<stars;s++){starStr+='*';}
-  var bg=isUs?'bg-yellow-400 text-black border-yellow-300':hl?'bg-green-500 text-white border-green-300':'bg-amber-800/70 text-amber-100 border-amber-600';
   var ring=hasS&&!isUs?'ring-1 ring-blue-400':'';
-  var openRing=open?'ring-2 ring-white':'';
   return (
     <button onClick={function(){setPopup(open?null:n);}}
       style={{width:56,height:46}}
@@ -694,12 +978,12 @@ function PitBox(props){
 }
 
 function PitBank(props){
-  var cols=props.cols; var popup=props.popup; var setPopup=props.setPopup; var sq=props.sq;
+  var cols=props.cols; var popup=props.popup; var setPopup=props.setPopup; var sq=props.sq; var mode=props.mode; var tierFilter=props.tierFilter;
   return (
     <div className="flex gap-1">
       {cols.map(function(col,ci){return (
         <div key={ci} className="flex flex-col gap-1">
-          {col.map(function(n,ri){return <PitBox key={ri} n={n} popup={popup} setPopup={setPopup} sq={sq}/>;}) }
+          {col.map(function(n,ri){return <PitBox key={ri} n={n} popup={popup} setPopup={setPopup} sq={sq} mode={mode} tierFilter={tierFilter}/>;}) }
         </div>
       );})}
     </div>
@@ -766,7 +1050,8 @@ function PitMap(){
 }
 
 
-function FreeStrat(){
+function FreeStrat(props){
+  var teams=(props&&props.teams)||TEAMS;
   var redState=useState([1884,0,0]);
   var redTeams=redState[0]; var setRedTeams=redState[1];
   var blueState=useState([0,0,0]);
@@ -803,7 +1088,7 @@ function FreeStrat(){
   var allPicked=[].concat(redTeams,blueTeams).filter(function(x){return x&&x!==0;});
 
   function teamOpts(current){
-    return TEAMS.filter(function(t){
+    return teams.filter(function(t){
       return t.n===current||allPicked.indexOf(t.n)<0;
     });
   }
@@ -824,163 +1109,445 @@ function FreeStrat(){
 
   return (
     <div className="space-y-4">
-      <div className="xl:grid xl:grid-cols-[380px_minmax(0,1fr)] xl:gap-4 xl:items-start">
-        <div className="space-y-4 xl:sticky xl:top-24">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 space-y-1.5">
-              <p className="text-xs font-bold text-red-400">RED ALLIANCE</p>
-              {[0,1,2].map(function(i){return (
-                <div key={i}>
-                  <p className="text-xs text-slate-500 mb-0.5">R{i+1}</p>
-                  {sel('red',i,redTeams[i])}
-                </div>
-              );})}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-2 space-y-1.5">
+          <p className="text-xs font-bold text-red-400">RED ALLIANCE</p>
+          {[0,1,2].map(function(i){return (
+            <div key={i}>
+              <p className="text-xs text-slate-500 mb-0.5">R{i+1}</p>
+              {sel('red',i,redTeams[i])}
             </div>
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 space-y-1.5">
-              <p className="text-xs font-bold text-blue-400">BLUE ALLIANCE</p>
-              {[0,1,2].map(function(i){return (
-                <div key={i}>
-                  <p className="text-xs text-slate-500 mb-0.5">B{i+1}</p>
-                  {sel('blue',i,blueTeams[i])}
-                </div>
-              );})}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {['AUTO','TELEOP'].map(function(phase){return (
-              <div key={phase} className="space-y-1.5">
-                <p className={"text-xs font-bold "+(phase==='AUTO'?'text-amber-400':'text-green-400')}>{phase} <span className="text-slate-400 font-normal">(F=Fuel, C=Climb)</span></p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[{label:'Red',side:'our',teams:redTeams,color:'red'},{label:'Blue',side:'opp',teams:blueTeams,color:'blue'}].map(function(al){
-                    var subtotalF=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-fuel')||0);},0);
-                    var subtotalC=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-climb')||0);},0);
-                    return (
-                      <div key={al.side} className={"p-2 rounded border "+(al.color==='red'?'bg-red-500/10 border-red-500/30':'bg-blue-500/10 border-blue-500/30')}>
-                        <div className="flex justify-between mb-1">
-                          <span className={"text-xs font-bold "+(al.color==='red'?'text-red-400':'text-blue-400')}>{al.label}</span>
-                          <span className="text-xs text-slate-400">{subtotalF+subtotalC}pt</span>
-                        </div>
-                        {[0,1,2].map(function(i){
-                          var fk=phase+'-'+al.side+'-t'+i+'-fuel';
-                          var ck=phase+'-'+al.side+'-t'+i+'-climb';
-                          var tn=al.teams[i];
-                          var lbl=tn&&tn!==0?(''+tn+(tn===1884?' *':'')):(al.color==='red'?'R':'B')+(i+1);
-                          return (
-                            <div key={i} className={"flex items-center gap-1 text-xs mb-0.5 "+(al.color==='red'?'text-red-200':'text-blue-200')}>
-                              <span className="w-12 font-bold truncate shrink-0">{lbl}</span>
-                              <span className="text-slate-500 shrink-0">F:</span>
-                              <input type="number" min="0" value={gp(fk)===0?"":gp(fk)} onChange={function(e){sp(fk,e.target.value===''?0:+e.target.value);}}
-                                className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
-                              <span className="text-slate-500 shrink-0">C:</span>
-                              <input type="number" min="0" value={gp(ck)===0?"":gp(ck)} onChange={function(e){sp(ck,e.target.value===''?0:+e.target.value);}}
-                                className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );})}
-          </div>
-
-          <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
-            <p className="text-sm font-bold">Score + RP</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded text-center bg-red-500/20">
-                <p className="text-xs text-slate-400">Red</p>
-                <p className="text-3xl font-black">{ourT}</p>
-              </div>
-              <div className="p-3 rounded text-center bg-blue-500/20">
-                <p className="text-xs text-slate-400">Blue</p>
-                <p className="text-3xl font-black">{oppT}</p>
-              </div>
-            </div>
-            <div className="border-t border-slate-700 pt-2 space-y-1 text-xs">
-              <div className={"flex justify-between font-bold "+(res==='Win'?'text-green-400':res==='Loss'?'text-red-400':'text-yellow-400')}>
-                <span>Red: {res}</span><span>{res==='Win'?'+3RP':res==='Tie'?'+1RP':'+0RP'}</span>
-              </div>
-              <div className={"flex justify-between "+(ourF>=100?'text-yellow-300':'text-slate-500')}>
-                <span>ENERGIZED (100+ fuel)</span><span>{ourF>=100?'+1RP':'need '+(100-ourF)}</span>
-              </div>
-              <div className={"flex justify-between "+(ourF>=360?'text-orange-300':'text-slate-500')}>
-                <span>SUPERCHARGED (360+ fuel)</span><span>{ourF>=360?'+1RP':'need '+(360-ourF)}</span>
-              </div>
-              <div className={"flex justify-between "+(ourC>=50?'text-purple-300':'text-slate-500')}>
-                <span>TRAVERSAL (50+ climb)</span><span>{ourC>=50?'+1RP':'need '+(50-ourC)}</span>
-              </div>
-              <div className="flex justify-between font-black text-sm border-t border-slate-600 pt-1">
-                <span>Red projected RP</span><span className="text-green-400">{rp}</span>
-              </div>
-            </div>
-          </div>
-
-          <button onClick={function(){
-            setRedTeams([1884,0,0]);setBlueTeams([0,0,0]);
-            setStrats({auto:{pos:{},strokes:[]},teleop:{pos:{},strokes:[]}});
-            setPreds({});
-          }} className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
-            <RotateCcw className="w-3 h-3"/>Reset Board
-          </button>
+          );})}
         </div>
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 space-y-1.5">
+          <p className="text-xs font-bold text-blue-400">BLUE ALLIANCE</p>
+          {[0,1,2].map(function(i){return (
+            <div key={i}>
+              <p className="text-xs text-slate-500 mb-0.5">B{i+1}</p>
+              {sel('blue',i,blueTeams[i])}
+            </div>
+          );})}
+        </div>
+      </div>
 
-        <div className="space-y-4 mt-4 xl:mt-0">
-          <div className="flex gap-2">
-            {['auto','teleop'].map(function(ph){return (
-              <button key={ph} onClick={function(){setActivePhase(ph);}}
-                className={"flex-1 py-1.5 rounded text-xs font-bold "+(activePhase===ph?(ph==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'):'bg-slate-700 text-slate-400')}>
-                {ph==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
-              </button>
-            );})}
+      <div className="flex gap-2">
+        {['auto','teleop'].map(function(ph){return (
+          <button key={ph} onClick={function(){setActivePhase(ph);}}
+            className={"flex-1 py-1.5 rounded text-xs font-bold "+(activePhase===ph?(ph==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'):'bg-slate-700 text-slate-400')}>
+            {ph==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
+          </button>
+        );})}
+      </div>
+
+      <PhaseMap
+        phaseKey={activePhase}
+        label={activePhase==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
+        labelClass={activePhase==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'}
+        match={match}
+        getData={function(){return strats[activePhase]||{pos:{},strokes:[]};}}
+        setData={function(d){setStrats(function(s){var n={};for(var k in s)n[k]=s[k];n[activePhase]=d;return n;});}}/>
+
+      <div className="space-y-2">
+        {['AUTO','TELEOP'].map(function(phase){return (
+          <div key={phase} className="space-y-1.5">
+            <p className={"text-xs font-bold "+(phase==='AUTO'?'text-amber-400':'text-green-400')}>{phase} <span className="text-slate-400 font-normal">(F=Fuel, C=Climb)</span></p>
+            <div className="grid grid-cols-2 gap-2">
+              {[{label:'Red',side:'our',teams:redTeams,color:'red'},{label:'Blue',side:'opp',teams:blueTeams,color:'blue'}].map(function(al){
+                var subtotalF=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-fuel')||0);},0);
+                var subtotalC=[0,1,2].reduce(function(s,i){return s+(gp(phase+'-'+al.side+'-t'+i+'-climb')||0);},0);
+                return (
+                  <div key={al.side} className={"p-2 rounded border "+(al.color==='red'?'bg-red-500/10 border-red-500/30':'bg-blue-500/10 border-blue-500/30')}>
+                    <div className="flex justify-between mb-1">
+                      <span className={"text-xs font-bold "+(al.color==='red'?'text-red-400':'text-blue-400')}>{al.label}</span>
+                      <span className="text-xs text-slate-400">{subtotalF+subtotalC}pt</span>
+                    </div>
+                    {[0,1,2].map(function(i){
+                      var fk=phase+'-'+al.side+'-t'+i+'-fuel';
+                      var ck=phase+'-'+al.side+'-t'+i+'-climb';
+                      var tn=al.teams[i];
+                      var lbl=tn&&tn!==0?(''+tn+(tn===1884?' *':'')):(al.color==='red'?'R':'B')+(i+1);
+                      return (
+                        <div key={i} className={"flex items-center gap-1 text-xs mb-0.5 "+(al.color==='red'?'text-red-200':'text-blue-200')}>
+                          <span className="w-12 font-bold truncate shrink-0">{lbl}</span>
+                          <span className="text-slate-500 shrink-0">F:</span>
+                          <input type="number" min="0" value={gp(fk)===0?"":gp(fk)} onChange={function(e){sp(fk,e.target.value===''?0:+e.target.value);}}
+                            className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
+                          <span className="text-slate-500 shrink-0">C:</span>
+                          <input type="number" min="0" value={gp(ck)===0?"":gp(ck)} onChange={function(e){sp(ck,e.target.value===''?0:+e.target.value);}}
+                            className="w-12 bg-slate-900 rounded px-1 py-0.5 text-center border border-slate-700"/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        );})}
+      </div>
 
-          <PhaseMap
-            phaseKey={activePhase}
-            label={activePhase==='auto'?'AUTO - 20s':'TELEOP - 2:20'}
-            labelClass={activePhase==='auto'?'bg-amber-500 text-white':'bg-green-500 text-white'}
-            match={match}
-            getData={function(){return strats[activePhase]||{pos:{},strokes:[]};}}
-            setData={function(d){setStrats(function(s){var n={};for(var k in s)n[k]=s[k];n[activePhase]=d;return n;});}}/>
+      <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
+        <p className="text-sm font-bold">Score + RP</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded text-center bg-red-500/20">
+            <p className="text-xs text-slate-400">Red</p>
+            <p className="text-3xl font-black">{ourT}</p>
+          </div>
+          <div className="p-3 rounded text-center bg-blue-500/20">
+            <p className="text-xs text-slate-400">Blue</p>
+            <p className="text-3xl font-black">{oppT}</p>
+          </div>
+        </div>
+        <div className="border-t border-slate-700 pt-2 space-y-1 text-xs">
+          <div className={"flex justify-between font-bold "+(res==='Win'?'text-green-400':res==='Loss'?'text-red-400':'text-yellow-400')}>
+            <span>Red: {res}</span><span>{res==='Win'?'+3RP':res==='Tie'?'+1RP':'+0RP'}</span>
+          </div>
+          <div className={"flex justify-between "+(ourF>=100?'text-yellow-300':'text-slate-500')}>
+            <span>ENERGIZED (100+ fuel)</span><span>{ourF>=100?'+1RP':'need '+(100-ourF)}</span>
+          </div>
+          <div className={"flex justify-between "+(ourF>=360?'text-orange-300':'text-slate-500')}>
+            <span>SUPERCHARGED (360+ fuel)</span><span>{ourF>=360?'+1RP':'need '+(360-ourF)}</span>
+          </div>
+          <div className={"flex justify-between "+(ourC>=50?'text-purple-300':'text-slate-500')}>
+            <span>TRAVERSAL (50+ climb)</span><span>{ourC>=50?'+1RP':'need '+(50-ourC)}</span>
+          </div>
+          <div className="flex justify-between font-black text-sm border-t border-slate-600 pt-1">
+            <span>Red projected RP</span><span className="text-green-400">{rp}</span>
+          </div>
+        </div>
+      </div>
+
+      <button onClick={function(){
+        setRedTeams([1884,0,0]);setBlueTeams([0,0,0]);
+        setStrats({auto:{pos:{},strokes:[]},teleop:{pos:{},strokes:[]}});
+        setPreds({});
+      }} className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
+        <RotateCcw className="w-3 h-3"/>Reset Board
+      </button>
+    </div>
+  );
+}
+
+// === Newton tab components ===================================================
+
+function tierInfoFor(tier){
+  if(!tier) return null;
+  for(var i=0;i<NEWTON_TIERS.length;i++){if(NEWTON_TIERS[i].id===tier) return NEWTON_TIERS[i];}
+  return null;
+}
+
+function NewtonTierBadge(props){
+  var t=props.t;
+  if(!t||t.us) return null;
+  var sc=NEWTON_SCOUT[t.n];
+  if(!sc) return null;
+  var info=tierInfoFor(sc.tier);
+  if(!info) return null;
+  return (
+    <span className={"px-1.5 py-0.5 rounded text-xs font-bold border "+info.cls}>
+      {info.label}{typeof sc.epa==='number'?' · EPA '+sc.epa:''}
+    </span>
+  );
+}
+
+function NewtonPopupCard(props){
+  var t=props.team; var note=props.note; var setNote=props.setNote; var onClose=props.onClose;
+  var isUs=t.us;
+  var sc=NEWTON_SCOUT[t.n];
+  return (
+    <div className={"bg-slate-800 border rounded-xl p-3 space-y-2 "+(sc&&sc.warn?'border-red-500/50':'border-blue-500/40')}>
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <p className="font-bold text-sm">{t.n} {t.name}</p>
+          {isUs&&<span className="text-xs bg-green-500 text-black px-1 py-0.5 rounded font-bold">YOU</span>}
+          {sc&&sc.warn&&<span className="text-xs bg-red-600 text-white px-1 py-0.5 rounded font-bold">⚠ WARN</span>}
+          <NewtonTierBadge t={t}/>
+        </div>
+        <button onClick={onClose} className="text-slate-400 text-xs px-2 shrink-0">x</button>
+      </div>
+      <p className="text-xs text-slate-400">{t.loc} <span className="text-slate-500">| Pit {t.pit}</span></p>
+      {sc&&sc.notes&&(
+        <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line border-t border-slate-700 pt-2">
+          {sc.notes.replace(/ • /g,'\n')}
+        </p>
+      )}
+      <textarea value={note||''} onChange={function(e){setNote(e.target.value);}}
+        placeholder="Our notes..."
+        className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-xs h-16 resize-none"/>
+    </div>
+  );
+}
+
+function NewtonPitMapView(props){
+  var event=props.event;
+  var search=props.search; var popup=props.popup; var setPopup=props.setPopup;
+  var getNote=props.getNote; var setNote=props.setNote;
+  var tierFilter=props.tierFilter||'all';
+  var sq=search.trim().toLowerCase();
+  var popupTeam=null;
+  if(popup){for(var i=0;i<event.teams.length;i++){if(event.teams[i].n===popup){popupTeam=event.teams[i];break;}}}
+  function Aisle(){return <div className="self-stretch border-l-2 border-r-2 border-dashed border-slate-600" style={{width:8}}/>;}
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-slate-400">Tap pit for team info | corner letter = tier | YOU = us</p>
+      {popup&&popupTeam&&(
+        <NewtonPopupCard team={popupTeam} note={getNote(popup)} setNote={function(v){setNote(popup,v);}} onClose={function(){setPopup(null);}}/>
+      )}
+      <div className="bg-slate-800/40 border border-slate-600 rounded-xl p-3 space-y-3 overflow-x-auto">
+        <div className="flex gap-2 items-end" style={{minWidth:'fit-content'}}>
+          <PitBank cols={NEWTON_TOP_1} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_TOP_2} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_TOP_3} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_TOP_4} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+        </div>
+        <div className="border-t border-dashed border-slate-600"/>
+        <div className="flex gap-2 items-start" style={{minWidth:'fit-content'}}>
+          <PitBank cols={NEWTON_BOT_1} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_BOT_2} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_BOT_3} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_BOT_4} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
+          <Aisle/>
+          <PitBank cols={NEWTON_BOT_5} popup={popup} setPopup={setPopup} sq={sq} mode="newton" tierFilter={tierFilter}/>
         </div>
       </div>
     </div>
   );
 }
 
+function NewtonPitMapTab(props){
+  var event=props.event; var getNote=props.getNote; var setNote=props.setNote;
+  var searchSt=useState(''); var search=searchSt[0]; var setSearch=searchSt[1];
+  var tierSt=useState('all'); var tier=tierSt[0]; var setTier=tierSt[1];
+  var popupSt=useState(null); var popup=popupSt[0]; var setPopup=popupSt[1];
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+        <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="Search number or name..." className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm"/>
+      </div>
+      <div className="flex gap-1 flex-wrap">
+        {event.tiers.map(function(t){
+          var active=tier===t.id;
+          return (
+            <button key={t.id} onClick={function(){setTier(t.id);}}
+              className={"px-2 py-1 rounded text-xs font-bold border transition-all "+t.cls+" "+(active?'ring-2 ring-white/60':'opacity-50 hover:opacity-100')}>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+      <NewtonPitMapView event={event} search={search} popup={popup} setPopup={setPopup} getNote={getNote} setNote={setNote} tierFilter={tier}/>
+    </div>
+  );
+}
+
+function TeamsTab(props){
+  var event=props.event;
+  var search=props.search; var setSearch=props.setSearch;
+  var fT=props.fT; var getNote=props.getNote; var setNote=props.setNote;
+  var hasTiers=!!event.tiers;
+  var tierSt=useState('all'); var tier=tierSt[0]; var setTier=tierSt[1];
+  var filtered=fT;
+  if(hasTiers){
+    if(tier!=='all'){
+      filtered=filtered.filter(function(t){
+        if(t.us) return false;
+        var sc=event.scout[t.n];
+        return sc&&sc.tier===tier;
+      });
+    }
+    // Sort by EPA descending so threats appear first.
+    filtered=filtered.slice().sort(function(a,b){
+      var ea=event.scout[a.n]?event.scout[a.n].epa:-1;
+      var eb=event.scout[b.n]?event.scout[b.n].epa:-1;
+      return eb-ea;
+    });
+  }
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
+        <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="Search..." className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm"/>
+      </div>
+      {hasTiers&&(
+        <div className="flex gap-1 flex-wrap">
+          {event.tiers.map(function(t){
+            var active=tier===t.id;
+            return (
+              <button key={t.id} onClick={function(){setTier(t.id);}}
+                className={"px-2 py-1 rounded text-xs font-bold border transition-all "+t.cls+" "+(active?'ring-2 ring-white/60':'opacity-50 hover:opacity-100')}>
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-xs text-slate-500">{hasTiers?filtered.length+' of '+event.teams.length+' teams':filtered.length+' teams'}</p>
+      <div className="space-y-1.5">
+        {filtered.map(function(t){
+          var s=event.scout[t.n];
+          return (
+            <div key={t.n} className={"rounded-xl border p-3 space-y-2 "+(t.us?'bg-green-500/10 border-green-500/50':s&&s.warn?'bg-red-900/20 border-red-500/30':'bg-slate-800/50 border-slate-700')}>
+              <div className="flex items-center gap-2">
+                <div className={"w-11 h-11 rounded-lg flex items-center justify-center font-black text-xs shrink-0 "+(t.us?'bg-green-500 text-black':s&&s.warn?'bg-red-700 text-white':'bg-slate-700 text-white')}>{t.n}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold text-sm">{t.name}</p>
+                    {t.us&&<span className="text-xs bg-green-500 text-black px-1 py-0.5 rounded font-bold">YOU</span>}
+                    {s&&s.warn&&<span className="text-xs bg-red-600 text-white px-1 py-0.5 rounded font-bold">⚠ WARN</span>}
+                    {hasTiers&&<NewtonTierBadge t={t}/>}
+                  </div>
+                  <p className="text-xs text-slate-400">{t.loc}{t.pit?' | Pit '+t.pit:''}</p>
+                  {!hasTiers&&s&&<div className="flex items-center gap-1 mt-0.5">
+                    {[0,1,2,3].map(function(i){return <Star key={i} className={"w-3 h-3 "+(i<s.stars?'text-yellow-400 fill-yellow-400':'text-slate-600')}/>;}) }
+                    {s.climb!=='None'&&<span className="text-xs text-purple-400 ml-1">{s.climb}</span>}
+                    {s.avgFuel>0&&<span className="text-xs text-green-400 ml-1">~{s.avgFuel*5}fuel/cyc</span>}
+                  </div>}
+                </div>
+              </div>
+              {!hasTiers&&s&&<p className="text-xs text-slate-300 leading-relaxed border-t border-slate-700 pt-2">{s.notes}</p>}
+              {!s&&!t.us&&!hasTiers&&<p className="text-xs text-slate-500 italic">No scouting data available</p>}
+              {hasTiers&&s&&s.notes&&(
+                <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line border-t border-slate-700 pt-2">
+                  {s.notes.replace(/ • /g,'\n')}
+                </p>
+              )}
+              {hasTiers&&(
+                <textarea value={getNote(t.n)} onChange={function(e){setNote(t.n,e.target.value);}}
+                  placeholder="Our notes..."
+                  className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-xs h-14 resize-none"/>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EventSwitcher(props){
+  var eventId=props.eventId; var setEventId=props.setEventId;
+  var openSt=useState(false); var open=openSt[0]; var setOpen=openSt[1];
+  var event=EVENTS[eventId];
+  return (
+    <div className="relative">
+      <button onClick={function(){setOpen(!open);}} className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition">
+        <span>{event.label}</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" className="opacity-60"><path d="M2 4 L5 7 L8 4" stroke="currentColor" strokeWidth="1.5" fill="none"/></svg>
+      </button>
+      {open&&(
+        <>
+          <div className="fixed inset-0 z-40" onClick={function(){setOpen(false);}}/>
+          <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden z-50" style={{minWidth:180}}>
+            {Object.keys(EVENTS).map(function(id){
+              var e=EVENTS[id]; var active=eventId===id;
+              return (
+                <button key={id} onClick={function(){setEventId(id);setOpen(false);}}
+                  className={"w-full text-left px-3 py-2 text-xs transition "+(active?'bg-green-500/20 text-green-300':'text-slate-300 hover:bg-slate-700')}>
+                  <div className="font-bold">{e.label}</div>
+                  <div className="text-slate-500" style={{fontSize:10}}>{e.subtitle}</div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function App(){
+  // eventId persisted under 'frc-event'; default 'newton' on first load.
+  const [eventId,setEventId]=useState(()=>{
+    try{const s=localStorage.getItem('frc-event');if(s&&EVENTS[s])return s;}catch{}
+    return 'newton';
+  });
+  // Per-event {strats, notes}. Migration: if frc-v12-brazil missing, fold legacy frc-v12 into brazil.strats; frc-v12 stays as backup.
+  const [allData,setAllData]=useState(()=>{
+    const init={brazil:{strats:{},notes:{}},newton:{strats:{},notes:{}}};
+    try{
+      const bRaw=localStorage.getItem('frc-v12-brazil');
+      if(bRaw){
+        init.brazil=JSON.parse(bRaw);
+      }else{
+        const legacy=localStorage.getItem('frc-v12');
+        if(legacy){
+          const old=JSON.parse(legacy);
+          const {newtonNotes,...stratsOnly}=old;
+          init.brazil={strats:stratsOnly,notes:{}};
+        }
+      }
+      const nRaw=localStorage.getItem('frc-v12-newton');
+      if(nRaw) init.newton=JSON.parse(nRaw);
+    }catch{}
+    return init;
+  });
+
   const [tab,setTab]=useState('overview');
   const [match,setMatch]=useState(null);
   const [eventMatches,setEventMatches]=useState([]);
-  const [matchesLoading,setMatchesLoading]=useState(true);
+  const [matchesLoading,setMatchesLoading]=useState(false);
   const [matchesError,setMatchesError]=useState('');
   const saveTimersRef=useRef({});
   const [search,setSearch]=useState('');
   const [dayF,setDayF]=useState('all');
   const [ruleF,setRuleF]=useState('all');
   const [copied,setCopied]=useState(false);
-  const [strats,setStrats]=useState({});
 
-  useEffect(()=>{try{const s=localStorage.getItem('frc-v11');if(s)setStrats(JSON.parse(s));}catch{}},[]);
-  useEffect(()=>{try{localStorage.setItem('frc-v11',JSON.stringify(strats));}catch{}},[strats]);
+  // Persist eventId.
+  useEffect(()=>{try{localStorage.setItem('frc-event',eventId);}catch{}},[eventId]);
+  // Persist per-event data. (Legacy 'frc-v12' is intentionally never written to again.)
   useEffect(()=>{
+    try{localStorage.setItem('frc-v12-brazil',JSON.stringify(allData.brazil));}catch{}
+    try{localStorage.setItem('frc-v12-newton',JSON.stringify(allData.newton));}catch{}
+  },[allData]);
+  // Reset cross-event state when event changes (different match list / day list).
+  useEffect(()=>{setMatch(null);setDayF('all');setSearch('');setEventMatches([]);setMatchesError('');},[eventId]);
+
+  const currentEvent=EVENTS[eventId];
+  const strats=allData[eventId].strats;
+  const notes=allData[eventId].notes;
+
+  const setStrats=updater=>setAllData(p=>{
+    const cur=p[eventId];
+    const next=typeof updater==='function'?updater(cur.strats):updater;
+    return {...p,[eventId]:{...cur,strats:next}};
+  });
+  const setNotes=updater=>setAllData(p=>{
+    const cur=p[eventId];
+    const next=typeof updater==='function'?updater(cur.notes):updater;
+    return {...p,[eventId]:{...cur,notes:next}};
+  });
+
+  useEffect(()=>{
+    if(!currentEvent.apiEventKey){
+      setMatchesLoading(false);
+      return;
+    }
     let alive = true;
     setMatchesLoading(true);
     setMatchesError('');
-    fetch(`/api/events/${CURRENT_EVENT_KEY}/matches`)
+    fetch(`/api/events/${currentEvent.apiEventKey}/matches`)
       .then(function(r){
         if(!r.ok) throw new Error('Failed to load matches');
         return r.json();
       })
       .then(function(data){
         if(!alive) return;
-        const nextMatches = (data.matches || []).map(mapApiMatchToLegacy);
+        const nextMatches = (data.matches || []).map(function(m){
+          return mapApiMatchToStrategyMatch(m, currentEvent.apiTimeZone);
+        });
         setEventMatches(nextMatches);
-        if(match){
-          const nextSelected = nextMatches.find(function(m){ return m.match === match.match; });
-          if(nextSelected) setMatch(nextSelected);
-        }
+        setMatch(function(selected){
+          if(!selected) return selected;
+          return nextMatches.find(function(m){ return m.match === selected.match; }) || selected;
+        });
       })
       .catch(function(err){
         if(!alive) return;
@@ -990,12 +1557,12 @@ function App(){
         if(alive) setMatchesLoading(false);
       });
     return function(){ alive = false; };
-  },[]);
+  },[currentEvent.apiEventKey, currentEvent.apiTimeZone]);
 
   useEffect(()=>{
-    if(matchesLoading||eventMatches.length===0) return;
+    if(!currentEvent.apiEventKey || matchesLoading || eventMatches.length===0) return;
     let alive = true;
-    fetch(`/api/events/${CURRENT_EVENT_KEY}/strategy-plans?scope=scheduled_match`)
+    fetch(`/api/events/${currentEvent.apiEventKey}/strategy-plans?scope=scheduled_match`)
       .then(function(r){
         if(!r.ok) throw new Error('Failed to load strategy plans');
         return r.json();
@@ -1013,7 +1580,7 @@ function App(){
       })
       .catch(function(_err){});
     return function(){ alive = false; };
-  },[matchesLoading,eventMatches]);
+  },[currentEvent.apiEventKey, matchesLoading, eventMatches]);
 
   useEffect(()=>{
     return function(){
@@ -1024,20 +1591,22 @@ function App(){
   },[]);
 
   const gm=m=>strats[`m${m}`]||{};
+  const scheduleMatches=eventMatches.length>0?eventMatches:currentEvent.matches;
   const queuePlanSave=useCallback(function(matchNumber,nextMatchData){
-    var matchObj = eventMatches.find(function(m){ return m.match === matchNumber; });
+    if(!currentEvent.apiEventKey) return;
+    var matchObj = scheduleMatches.find(function(m){ return m.match === matchNumber; });
     if(!matchObj||!matchObj.matchKey) return;
-    var saveKey = String(matchNumber);
+    var saveKey = currentEvent.apiEventKey+':'+String(matchNumber);
     if(saveTimersRef.current[saveKey]) clearTimeout(saveTimersRef.current[saveKey]);
     saveTimersRef.current[saveKey] = setTimeout(function(){
-      fetch(`/api/events/${CURRENT_EVENT_KEY}/strategy-plans/scheduled_match`,{
+      fetch(`/api/events/${currentEvent.apiEventKey}/strategy-plans/scheduled_match`,{
         method:'PUT',
         headers:{'content-type':'application/json'},
         body:JSON.stringify(strategyPlanPayload(matchObj,nextMatchData))
       }).catch(function(_err){});
     },500);
-  },[eventMatches]);
-  const sm=(m,d)=>setStrats(function(p){
+  },[currentEvent.apiEventKey, scheduleMatches]);
+  const sm=(m,d)=>setStrats(p=>{
     var key=`m${m}`;
     var nextMatchData={...(p[key]||{}),...d};
     queuePlanSave(m,nextMatchData);
@@ -1062,28 +1631,32 @@ function App(){
     try{navigator.clipboard.writeText(`${location.origin}${location.pathname}?s=${btoa(JSON.stringify(strats))}`);setCopied(true);setTimeout(()=>setCopied(false),2000);}catch{}
   };
 
-  const scheduleMatches=eventMatches;
-  const days=['all'].concat(Array.from(new Set(scheduleMatches.map(function(m){return m.day;}))));
-  const cats=['all',...new Set(RULES.map(r=>r.cat))];
+  const getNote=n=>notes[n]||'';
+  const setNote=(n,v)=>setNotes(p=>({...p,[n]:v}));
+
+  const days=['all',...Array.from(new Set(scheduleMatches.map(m=>m.day)))];
+  const cats=['all',...new Set(currentEvent.rules.map(r=>r.cat))];
   const fM=scheduleMatches.filter(m=>dayF==='all'||m.day===dayF);
-  const fR=ruleF==='all'?RULES:RULES.filter(r=>r.cat===ruleF);
-  const fT=TEAMS.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.n.toString().includes(search));
-  const strategyMatches=scheduleMatches;
+  const fR=ruleF==='all'?currentEvent.rules:currentEvent.rules.filter(r=>r.cat===ruleF);
+  const fT=currentEvent.teams.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.n.toString().includes(search));
   const TABS=[{id:'overview',L:'Overview',I:Book},{id:'schedule',L:'Schedule',I:Calendar},{id:'strategy',L:'Strategy',I:Trophy},{id:'freestrat',L:'Free Strat',I:Pencil},{id:'scoring',L:'Scoring',I:CircleDot},{id:'rpcalc',L:'RP Calc',I:Calculator},{id:'pitmap',L:'Pit Map',I:MapPin},{id:'teams',L:'Teams',I:Users},{id:'rules',L:'Rules',I:AlertTriangle}];
 
   return(
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-green-900 text-white">
       <header className="bg-slate-900/90 border-b border-green-500/30 sticky top-0 z-50 p-3">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center font-black text-black text-sm">FRC</div>
-            <div><h1 className="font-bold text-green-400 text-sm">REBUILT 2026</h1><p className="text-xs text-slate-400">Brazil | Mar 12-15</p></div>
+            <div>
+              <h1 className="font-bold text-green-400 text-sm">REBUILT 2026</h1>
+              <EventSwitcher eventId={eventId} setEventId={setEventId}/>
+            </div>
           </div>
           <div className="bg-green-500/20 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Award className="w-3 h-3"/>1884 Griffins</div>
         </div>
       </header>
       <nav className="bg-slate-800/50 border-b border-slate-700 overflow-x-auto">
-        <div className="max-w-[1400px] mx-auto flex gap-1 p-1">
+        <div className="max-w-2xl mx-auto flex gap-1 p-1">
           {TABS.map(({id,L,I})=>(
             <button key={id} onClick={()=>setTab(id)} className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium whitespace-nowrap ${tab===id?'bg-green-500 text-white':'text-slate-400 hover:text-white'}`}>
               <I className="w-3 h-3"/>{L}
@@ -1092,27 +1665,54 @@ function App(){
         </div>
       </nav>
 
-      <main className="max-w-[1400px] mx-auto p-3">
+      <main className="max-w-2xl mx-auto p-3">
 
         {tab==='overview'&&(
           <div className="space-y-3">
             <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
               <h2 className="font-bold mb-2 flex items-center gap-2"><Calendar className="w-4 h-4 text-green-400"/>Event</h2>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div> Mar 12-15, 2026</div><div> SESI Osasco, SP Brazil</div>
-                <div> 51 teams</div><div> AndyMark field</div>
+                <div>{currentEvent.dates}</div><div>{currentEvent.location}</div>
+                <div>{currentEvent.teamCount} teams</div><div>{currentEvent.fieldType}</div>
               </div>
             </div>
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
-              <h2 className="font-bold text-amber-400 mb-2"> Griffins - No Climb!</h2>
-              <ul className="text-xs space-y-1.5">
-                <li>- Cannot climb -> primary FUEL scorer</li>
-                <li>- Preload up to 8 balls | start anywhere in your alliance zone</li>
-                <li>- Win AUTO -> opponent HUB inactive first in SHIFT 1</li>
-                <li>- Keep shooting in END GAME while partners climb</li>
-                <li>- Partners need 50+ climb pts for TRAVERSAL RP (e.g. 2xL2 + L1)</li>
-              </ul>
-            </div>
+            {currentEvent.overviewBlurb.type==='no-climb'&&(
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                <h2 className="font-bold text-amber-400 mb-2"> Griffins - No Climb!</h2>
+                <ul className="text-xs space-y-1.5">
+                  <li>- Cannot climb -> primary FUEL scorer</li>
+                  <li>- Preload up to 8 balls | start anywhere in your alliance zone</li>
+                  <li>- Win AUTO -> opponent HUB inactive first in SHIFT 1</li>
+                  <li>- Keep shooting in END GAME while partners climb</li>
+                  <li>- Partners need 50+ climb pts for TRAVERSAL RP (e.g. 2xL2 + L1)</li>
+                </ul>
+              </div>
+            )}
+            {currentEvent.overviewBlurb.type==='defender'&&(
+              <>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
+                  <h2 className="font-bold text-blue-300 mb-2">Griffins - Defender Mode</h2>
+                  <ul className="text-xs space-y-1.5">
+                    <li>- Long rectangle. Premium defence. We don't shoot, store, or climb.</li>
+                    <li>- Pick us third: we lock down the opposing alliance's best scorer.</li>
+                    <li>- G418: max 5s pin, then back off 3s before re-engaging</li>
+                    <li>- Partners must carry FUEL scoring (we contribute 0)</li>
+                    <li>- Partners need 50+ climb pts for TRAVERSAL RP (we contribute 0)</li>
+                    <li>- Look for captains with 2 strong scorers + L2/L3 climber</li>
+                  </ul>
+                </div>
+                {currentEvent.pitch&&(
+                  <div className="bg-blue-500/10 border border-blue-500/40 rounded-xl p-3 space-y-2">
+                    <h3 className="font-bold text-sm flex items-center gap-2"><Award className="w-4 h-4 text-blue-300"/>{currentEvent.pitch.title}</h3>
+                    {currentEvent.pitch.paragraphs.map(function(p,i){return (
+                      <p key={i} className="text-xs text-slate-200 leading-relaxed">
+                        <span className="font-bold text-blue-300">{p.h}</span> {p.body}
+                      </p>
+                    );})}
+                  </div>
+                )}
+              </>
+            )}
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3">
               <h2 className="font-bold mb-2 flex items-center gap-2"><Clock className="w-4 h-4 text-green-400"/>Match (2:40)</h2>
               <div className="flex flex-wrap gap-1 text-xs mb-2">
@@ -1144,6 +1744,12 @@ function App(){
 
         {tab==='schedule'&&(
           <div className="space-y-3">
+            {currentEvent.scheduleIsPlaceholder&&(
+              <div className="bg-amber-500/10 border border-amber-500/40 rounded-lg p-2 flex items-center gap-2">
+                <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">PLACEHOLDER</span>
+                <span className="text-xs text-slate-300">Real assignments drop at event check-in.</span>
+              </div>
+            )}
             <div className="flex gap-1 flex-wrap">
               {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
             </div>
@@ -1160,7 +1766,7 @@ function App(){
                     </div>
                     <div className="flex items-center gap-1">
                       {has&&<span className="text-xs bg-slate-700 px-1.5 py-0.5 rounded">{t.our}-{t.opp}</span>}
-                      <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${m.our==='red'?'bg-red-500/30 text-red-300':'bg-blue-500/30 text-blue-300'}`}>{m.our==='red'?'R':'B'}{m.stn}</span>
+                      {m.our&&<span className={`px-1.5 py-0.5 rounded text-xs font-bold ${m.our==='red'?'bg-red-500/30 text-red-300':'bg-blue-500/30 text-blue-300'}`}>{m.our==='red'?'R':'B'}{m.stn}</span>}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -1183,17 +1789,15 @@ function App(){
               </button>
             </div>
             <div className="flex flex-wrap gap-1">
-              {strategyMatches.map(m=>(<button key={m.match} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>Q{m.match}</button>))}
+              {scheduleMatches.map(m=>(<button key={m.match} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>Q{m.match}</button>))}
             </div>
-            {matchesLoading&&<div className="text-xs text-slate-400">Loading strategy matches...</div>}
-            {!matchesLoading&&!match&&strategyMatches.length===0&&<div className="text-xs text-slate-400">No matches loaded.</div>}
 
             {match?(
               <>
-                <div className={`p-3 rounded-lg border ${match.our==='red'?'bg-red-500/10 border-red-500/30':'bg-blue-500/10 border-blue-500/30'}`}>
+                <div className={`p-3 rounded-lg border ${match.our==='red'?'bg-red-500/10 border-red-500/30':match.our==='blue'?'bg-blue-500/10 border-blue-500/30':'bg-slate-800/50 border-slate-600'}`}>
                   <div className="flex justify-between">
                     <span className="font-bold">Q{match.match} | {match.day} | {match.time}</span>
-                    <span className={`font-bold ${match.our==='red'?'text-red-400':'text-blue-400'}`}>{match.our.toUpperCase()} Stn {match.stn}</span>
+                    {match.our&&<span className={`font-bold ${match.our==='red'?'text-red-400':'text-blue-400'}`}>{match.our.toUpperCase()} Stn {match.stn}</span>}
                   </div>
                   <div className="flex gap-1 mt-2 flex-wrap">
                     <span className="text-xs text-slate-400">Us:</span>
@@ -1211,8 +1815,8 @@ function App(){
                       function MiniScout(props){
                         var tn=props.tn; var col=props.col;
                         if(!tn||tn===0)return null;
-                        var s=SCOUT_DATA[tn];
-                        var teamObj=null; for(var i=0;i<TEAMS.length;i++){if(TEAMS[i].n===tn){teamObj=TEAMS[i];break;}}
+                        var s=currentEvent.scout[tn];
+                        var teamObj=null; for(var i=0;i<currentEvent.teams.length;i++){if(currentEvent.teams[i].n===tn){teamObj=currentEvent.teams[i];break;}}
                         var name=teamObj?teamObj.name:'Team '+tn;
                         var isUs=tn===1884;
                         return (
@@ -1398,14 +2002,7 @@ function App(){
                     );
                   })()}
                 </div>
-                <button onClick={()=>{
-                  setStrats(function(p){
-                    const n={...p};
-                    delete n[`m${match.match}`];
-                    return n;
-                  });
-                  queuePlanSave(match.match,{});
-                }}
+                <button onClick={()=>setStrats(p=>{const n={...p};delete n[`m${match.match}`];return n;})}
                   className="w-full py-2 rounded bg-slate-700 hover:bg-slate-600 text-xs flex items-center justify-center gap-1">
                   <RotateCcw className="w-3 h-3"/>Reset This Match
                 </button>
@@ -1420,41 +2017,7 @@ function App(){
         )}
 
         {tab==='teams'&&(
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm"/>
-            </div>
-            <p className="text-xs text-slate-500">{fT.length} teams</p>
-            <div className="space-y-1.5">
-              {fT.map(function(t){
-                var s=SCOUT_DATA[t.n];
-                var starStr=''; if(s){for(var i=0;i<s.stars;i++)starStr+='*';}
-                return (
-                  <div key={t.n} className={"rounded-xl border p-3 space-y-2 "+(t.us?'bg-green-500/10 border-green-500/50':s&&s.warn?'bg-red-900/20 border-red-500/30':'bg-slate-800/50 border-slate-700')}>
-                    <div className="flex items-center gap-2">
-                      <div className={"w-11 h-11 rounded-lg flex items-center justify-center font-black text-xs shrink-0 "+(t.us?'bg-green-500 text-black':s&&s.warn?'bg-red-700 text-white':'bg-slate-700 text-white')}>{t.n}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-bold text-sm">{t.name}</p>
-                          {t.us&&<span className="text-xs bg-green-500 text-black px-1 py-0.5 rounded font-bold">YOU</span>}
-                          {s&&s.warn&&<span className="text-xs bg-red-600 text-white px-1 py-0.5 rounded font-bold">! WARN</span>}
-                        </div>
-                        <p className="text-xs text-slate-400">{t.loc}</p>
-                        {s&&<div className="flex items-center gap-1 mt-0.5">
-                          {[0,1,2,3].map(function(i){return <Star key={i} className={"w-3 h-3 "+(i<s.stars?'text-yellow-400 fill-yellow-400':'text-slate-600')}/>;}) }
-                          {s.climb!=='None'&&<span className="text-xs text-purple-400 ml-1">{s.climb}</span>}
-                          {s.avgFuel>0&&<span className="text-xs text-green-400 ml-1">~{s.avgFuel*5}fuel/cyc</span>}
-                        </div>}
-                      </div>
-                    </div>
-                    {s&&<p className="text-xs text-slate-300 leading-relaxed border-t border-slate-700 pt-2">{s.notes}</p>}
-                    {!s&&!t.us&&<p className="text-xs text-slate-500 italic">No scouting data available</p>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <TeamsTab event={currentEvent} search={search} setSearch={setSearch} fT={fT} getNote={getNote} setNote={setNote}/>
         )}
 
         {tab==='rules'&&(
@@ -1629,7 +2192,7 @@ function App(){
         {tab==='freestrat'&&(
           <div className="space-y-3">
             <h2 className="font-bold flex items-center gap-2"><Pencil className="w-4 h-4 text-green-400"/>Free Strategy Board</h2>
-            <FreeStrat/>
+            <FreeStrat key={eventId} teams={currentEvent.teams}/>
           </div>
         )}
 
@@ -1643,12 +2206,14 @@ function App(){
         {tab==='pitmap'&&(
           <div className="space-y-3">
             <h2 className="font-bold flex items-center gap-2"><MapPin className="w-4 h-4 text-green-400"/>Pit Map</h2>
-            <PitMap/>
+            {currentEvent.pitGridLayout==='brazil'
+              ? <PitMap/>
+              : <NewtonPitMapTab event={currentEvent} getNote={getNote} setNote={setNote}/>}
           </div>
         )}
 
       </main>
-      <footer className="border-t border-slate-700 p-3 text-center text-xs text-slate-500 mt-4">FRC Brazil 2026 | Team 1884 Griffins | REBUILT</footer>
+      <footer className="border-t border-slate-700 p-3 text-center text-xs text-slate-500 mt-4">{currentEvent.label} | Team 1884 Griffins | REBUILT</footer>
     </div>
   );
 }
