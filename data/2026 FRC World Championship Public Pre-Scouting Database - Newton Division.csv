@@ -1,0 +1,86 @@
+Newton Division,,`,,,,,,,,,,,,,,,,,,,,,,,,Statbotics Data,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,Drive Train Info,General Robot Info,,,,,Robot Archetype,,,,,,,Fuel Capabilities,,,,Autonomous Mode Capabilities,,,,,Endgame Capability,Other / Misc.,General EPA,,,,Ranking Points EPA,,
+Team Number (linked to The Blue Alliance),"Team Name
+(linked to Statbotics)",Drive Train Type,"Robot Weight
+(without Bumpers)",Bumper Weight,Robot Height,"Robot Width
+(with Bumpers)",Robot Length (with Bumpers),Intake Type,Hopper Type,Max Hopper Capacity,Indexer Type,Shooter Type,Shooter Hood Type,Trench / Bump,Fuel Acquisition,Fuel Scoring Position,Fuel Passing,Max Balls Per Second (BPS),Neutral Zone Auto,"Preferred Starting Position for
+Neutral Zone Auto",Alliance Zone Auto,"Preferred Starting Position for
+Alliance Zone Auto",Auto Climb,Endgame Tower Climbing,Comments,EPA,Auto EPA,Teleop EPA,Endgame EPA,Energized RP EPA,Supercharged RP EPA,Traversal RP EPA
+88,TJ²,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,176.4,43.6,95.3,37.5,0.57,0.28,-0.3
+148,Robowranglers,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,170.0,32.6,95.0,42.4,0.71,0.05,-0.3
+180,S.P.A.M.,COTS Swerve,109,20,21.5,33,33,Over-the-Bumper,Horizontal Extension Only,50-60 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,10-15 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,221.3,53.1,120.1,48.1,0.66,0.15,-0.3
+195,CyberKnights,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Roller Conveyor,Drum Shooter (3+ Fuel Wide),Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,10-15 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,205.9,58.1,103.0,44.7,0.62,0.63,-0.3
+233,The Pink Team,COTS Swerve,,,30,,,Over-the-Bumper,Horizontal Extension Only,60-70 Fuel,Roller Conveyor,Drum Shooter (3+ Fuel Wide),Adjustable Hood (Single),Bump Only,Floor + Outpost,<15 Feet Away From Hub,From Neutral Zone Only,10-15 BPS,2x Sweep-and-Score,Either Bump,,,No,None,,128.1,16.1,70.1,41.9,0.56,-0.23,-0.3
+341,Miss Daisy,COTS Swerve,,,,,,Over-the-Bumper,Fixed,<10 Fuel,Other,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,,,,,,,,179.2,37.0,104.2,38.0,0.74,0.14,-0.3
+346,RoboHawks,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,139.9,18.2,91.8,30.0,0.54,0.06,-0.3
+386,Team Voltage,COTS Swerve,,,22,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,5-10 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,108.2,17.1,63.0,28.0,0.58,-0.09,-0.3
+424,Rust Belt Robotics,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,117.0,24.3,64.8,27.9,0.47,-0.17,-0.3
+599,The Robodox,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,187.4,40.5,116.3,30.6,0.62,0.46,-0.3
+604,Quixilver,COTS Swerve,,,30,,,Over-the-Bumper,Horizontal Extension Only,50-60 Fuel,Dye Rotor,Single Turret,Adjustable Hood (Single),Bump Only,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,10-15 BPS,1x Sweep-and-Score,Either Bump,,,,,,202.6,39.1,117.4,46.1,0.63,0.38,-0.3
+687,The Nerd Herd,,,,,,,,,,,,,"Trench, but Bump Only with Full Hopper",,,,,,,,,,,Can go Trench and Bump with fuel but if they get a large load of balls net prevents them from going under trench,142.6,35.0,78.2,29.4,0.33,0.21,-0.3
+695,Bison Robotics,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,200.8,40.2,105.8,54.8,0.73,-0.05,-0.3
+818,The Steel Armadillos,COTS Swerve,114,10,22,33,33,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,1.5x Sweep-and-Score,Left Trench,Pre-Load + Depot,Hub (Centered),Yes (Side of Tower),L1 (Side of Tower Only),"5 total auton options exist as of 4/24. Option 1/2 start under left/right trench, sweep 1 pass and score, sweep 2nd pass and run out of time, score in transition shift. Option 3/4 start under left/right trench, sweep 1, score and climb. Option 5 is start in front of hub, sweep back and grab depot, score and climb. ",99.4,28.4,51.8,19.2,0.36,-0.21,-0.3
+868,TechHOUNDS,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,121.7,23.7,67.4,30.5,0.56,-0.19,-0.3
+930,Mukwonago BEARs,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Roller Conveyor,Drum Shooter (4+ Fuel Wide),Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,20-25 BPS,2x Sweep-and-Score,Right Trench,,,No,None,,122.0,13.1,73.5,35.5,0.40,-0.05,-0.3
+948,NRG (Newport Robotics Group),COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,60-70 Fuel,Roller Conveyor,Drum Shooter (4+ Fuel Wide),Fixed Hood,Bump Only,Floor Only,,,20-25 BPS,2x Sweep-and-Score,Either Bump,Pre-Load + Depot,,,,,153.5,36.0,82.6,34.9,0.49,0.28,-0.3
+973,Greybots,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,187.8,46.5,99.6,41.7,0.55,0.34,-0.3
+1108,Panther Robotics,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,127.0,16.3,77.2,33.5,0.61,0.05,-0.3
+1540,Flaming Chickens,COTS Swerve,113.6,14.1,21.5,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,2.5x Sweep-and-Score,Either Trench,Pre-Load + Depot,Anywhere on Starting Line,No,None,,186.4,45.4,103.2,37.8,0.65,0.36,-0.3
+1577,Steampunk,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,69.0,15.1,36.9,17.1,0.20,-0.21,-0.3
+1796,RoboTigers,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,5-10 BPS,2x Sweep-and-Score,,,,,,,251.4,45.3,151.8,54.3,0.72,0.56,-0.3
+1807,Redbird Robotics,COTS Swerve,106.8,12.5,21.5,31.5,36,Over-the-Bumper,Fixed,40-50 Fuel,Roller Conveyor,Drum Shooter (2+ Fuel Wide),Adjustable Hood (Single),Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,1.5x Sweep-and-Score,Either Trench,Pre-Load + Depot,Anywhere on Starting Line,No,None,"Defense, extendable hopper w/ net",69.0,17.1,31.9,20.0,0.13,-0.07,-0.3
+1833,Team BEAN,COTS Swerve,,,22,,,Over-the-Bumper,Horizontal Extension Only,50-60 Fuel,,Quad Shooters (Independent),Adjustable Hood (Single),Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Neutral Zone Only,15-20 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,246.8,57.4,146.3,43.1,0.85,0.51,-0.3
+1884,Griffins,,,,,,,,,,,,,Trench Only,,,,,,,,,,,,25.0,3.8,15.1,6.2,-0.08,-0.23,-0.3
+1902,Exploding Bacon,COTS Swerve,,,22,,,Over-the-Bumper,Horizontal Extension Only,20-30 Fuel,,Dual Shooters (Independent),Fixed Hood,Trench and Bump,Floor Only,<10 Feet Away From Hub,From Neutral Zone Only,<5 BPS,None,,Pre-Load Only,Hub (Centered),No,None,,48.9,6.8,25.1,16.9,0.24,-0.23,-0.3
+1922,Oz-Ram,COTS Swerve,114.4,14,28.75,38,32,Over-the-Bumper,Horizontal Extension Only,80-90 Fuel,Spindexer,Single Shooter,Fixed Hood,Bump Only,Floor + Outpost,<15 Feet Away From Hub,From Neutral Zone Only,5-10 BPS,1x Sweep-and-Score,Either Bump,Pre-Load Only,Anywhere on Starting Line,No,None,Fixed shooter with shoot on the move,139.0,21.7,79.4,37.9,0.60,0.07,-0.3
+2046,Bear Metal,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Roller Conveyor,Drum Shooter (4+ Fuel Wide),Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,20-25 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,301.0,62.0,172.2,66.8,0.83,0.75,-0.3
+2052,KnightKrawler,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,156.6,31.9,90.9,33.9,0.69,-0.06,-0.3
+2067,Apple Pi,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,194.2,41.6,103.6,49.1,0.63,0.18,-0.3
+2194,Fondy Fire,COTS Swerve,,,,,,,,,,,,Bump Only,,,,,,,,,,,,138.5,40.1,80.7,17.7,0.55,0.03,-0.3
+2370,IBOTS,COTS Swerve,103,11,20,33,38,Over-the-Bumper,Horizontal Extension Only,30-40 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Neutral Zone Only,5-10 BPS,2x Sweep-and-Score,Either Trench or Bump,Pre-Load Only,Hub (Centered),No,None,,141.8,32.1,79.7,30.0,0.63,0.21,-0.3
+2586,Copper Bots,COTS Swerve,114.5,14,21.75,34,32,Over-the-Bumper,Horizontal Extension Only,50-60 Fuel,Spindexer,Single Turret,Fixed Hood,Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,1.5x Sweep-and-Score,Either Trench,Pre-Load + Depot,Hub (Centered),Yes (Front of Tower),L1 (Side of Tower Only),,79.5,15.4,42.1,22.0,0.33,-0.10,-0.3
+2713,Red Hawk Robotics,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,153.2,23.9,93.9,35.4,0.46,0.13,-0.3
+2783,Engineers of Tomorrow,,,,,,,,,,,,,Trench Only,,,,,,,,,,,,163.4,26.1,89.8,47.5,0.60,-0.19,-0.3
+2910,Jack in the Bot,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Roller Conveyor,Drum Shooter (4+ Fuel Wide),Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,20-25 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,210.6,37.1,119.2,54.4,0.58,0.35,-0.3
+2996,Cougars Gone Wired,COTS Swerve,,,,,,Over-the-Bumper,Horizontal & Vertical Extension,60-70 Fuel,Roller Conveyor,Drum Shooter (3+ Fuel Wide),Adjustable Hood (Single),"Trench, but Bump Only with Full Hopper",Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,15-20 BPS,2x Sweep-and-Score,Either Trench,Pre-Load + Depot,Either Bump,Yes (Side of Tower),L3 (Side of Tower Only),Hopper extension by very stretchy net,159.7,33.6,87.9,38.1,0.59,0.24,-0.1
+3005,RoboChargers,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,135.7,24.7,73.1,37.9,0.63,0.06,-0.3
+3044,Team 0xBE4,COTS Swerve,113.6,12.3,21.75,35,35,Over-the-Bumper,Fixed,30-40 Fuel,Roller Conveyor,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,5-10 BPS,Other,Either Bump,Other,Either Trench,No,None,Auto is left trench to depot and out to pass in NZ,91.8,18.3,51.4,22.0,0.42,-0.17,-0.3
+3256,WarriorBorgs,,,,,,,,,,,,,Bump Only,,,,,,,,,,,,179.1,45.8,85.2,48.1,0.56,0.54,-0.3
+3276,TOOLCATS,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,126.3,24.8,80.3,21.3,0.70,-0.23,-0.3
+3354,PrepaTec - TecDroid,,,,,,,,,,,,,Trench and Bump,,,,,,,,,,,,105.7,16.0,60.6,29.1,0.53,-0.17,-0.3
+3966,Gryphon Command,COTS Swerve,104,13,22,,,Over-the-Bumper,Horizontal Extension Only,30-40 Fuel,Roller Conveyor,Drum Shooter (2+ Fuel Wide),Fixed Hood,Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,5-10 BPS,1.5x Sweep-and-Score,Either Trench,,Either Trench,No,None,Rebuilt From week 3 to week 6,116.3,15.8,75.0,25.6,0.41,-0.19,-0.3
+4099,The Falcons,,,,,,,,,,,,,,,,,,,,,,,,,145.6,38.8,74.1,32.6,0.50,0.19,-0.3
+4206,Robo Vikes,,,,,,,,,,,,,,,,,,,,,,,,,154.8,22.4,99.4,33.0,0.42,0.33,-0.3
+4253,Raid Zero,,,,,,,,,,,,,,,,,,,,,,,,,47.2,12.3,29.4,5.5,0.08,-0.23,-0.3
+4400,Cerbotics - Peñoles,,,,,,,,,,,,,,,,,,,,,,,,,185.9,27.5,116.7,41.7,0.73,-0.07,-0.3
+4561,TerrorBytes,COTS Swerve,112,,,,,Over-the-Bumper,Horizontal Extension Only,50-60 Fuel,Twindexer,Dual Shooters (Independent),,Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,10-15 BPS,2.5x Sweep-and-Score,Either Trench,Pre-Load + Depot,,No,None,,127.2,23.4,73.2,30.7,0.58,-0.11,-0.3
+4590,GreenBlitz,,,,,,,,,,,,,,,,,,,,,,,,,61.4,13.4,32.8,15.2,0.18,-0.21,-0.3
+5216,E-Ville Empire,,,,,,,,,,,,,,,,,,,,,,,,,89.1,26.9,41.5,20.7,0.39,-0.14,-0.3
+5414,Pearadox,COTS Swerve,107.2,12,21.5,33.75,33.75,Over-the-Bumper,Horizontal Extension Only,30-40 Fuel,Spindexer,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,2x Sweep-and-Score,Either Trench or Bump,Pre-Load + Either Outpost OR Depot,Anywhere on Starting Line,No,None,Major BPS upgrades since DCMP,77.0,18.6,33.1,25.4,0.14,-0.13,-0.3
+5549,Gryphon Robotics,COTS Swerve,110,10,21.5,34,34,Over-the-Bumper,Horizontal & Vertical Extension,50-60 Fuel,Belt Conveyor,Dual Shooters (Independent),Adjustable Hood (Single),"Trench, but Bump Only with Full Hopper",Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,10-15 BPS,1.5x Sweep-and-Score,Either Trench,Pre-Load + Depot,Hub (Centered),No,None,Citrus style expanding hopper - very good at neutral zone passing and stealing / defence. See DCMP Finals,119.9,19.5,64.6,35.9,0.46,0.00,-0.3
+5736,Kingsmen Robotics,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Roller Conveyor,Drum Shooter (3+ Fuel Wide),Fixed Hood,Trench and Bump,Floor Only,<10 Feet Away From Hub,From Neutral Zone Only,15-20 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,225.6,63.5,116.5,45.7,0.62,0.36,-0.3
+5948,PrepaTec - Lebotics,,,,,,,,,,,,,,,,,,,,,,,,,127.1,19.1,81.0,27.0,0.53,-0.13,-0.3
+5951,Makers Assemble,,,,,,,,,,,,,,,,,,,,,,,,,86.0,18.8,45.9,21.3,0.25,-0.21,-0.3
+6036,Peninsula Robotics,,,,,,,,,,,,,,,,,,,,,,,,,189.6,43.7,106.5,39.4,0.74,0.32,-0.3
+6352,LAUNCH TEAM,COTS Swerve,,,26,36.5,31.75,Over-the-Bumper,Horizontal Extension Only,80-90 Fuel,Belt Conveyor,Drum Shooter (2+ Fuel Wide),Fixed Hood,Bump Only,Floor + Outpost,<10 Feet Away From Hub,None,,,,,,,None,Major improvements since Week 2,37.8,7.9,22.8,7.1,0.02,-0.23,-0.3
+6436,PARS ROBOTICS,,,,,,,,,,,,,,,,,,,,,,,,,130.2,19.5,72.9,37.7,0.60,-0.07,-0.3
+6647,PrepaTec - VOLTEC,,,,,,,,,,,,,,,,,,,,,,,,,188.4,34.5,111.3,42.5,0.57,0.33,-0.3
+6988,ACI35,COTS Swerve,,,,,,Over-the-Bumper,Horizontal Extension Only,40-50 Fuel,Belt Conveyor,Drum Shooter (2+ Fuel Wide),Fixed Hood,Trench and Bump,Floor + Outpost,Anywhere in Alliance Zone,From Anywhere On Field,,2x Sweep-and-Score,Either Trench,Pre-Load + Outpost AND Depot,Hub (Centered),No,None,"Basically rebuilt the robot from week 2 as dumpster type
+-Switch from MK4 to MK5i
+-Added two Limelight 4s for better auto and accuracy",20.7,5.7,13.6,1.3,0.06,-0.17,-0.3
+7160,Ludington O-Bots,,,,,,,,,,,,,,,,,,,,,,,,,118.5,17.9,64.0,36.6,0.58,0.04,-0.3
+8046,LakerBots,,,,,,,,,,,,,,,,,,,,,,,,,143.3,23.5,84.4,35.4,0.35,0.19,-0.3
+8373,The Flying Octopi,,,,,,,,,,,,,,,,,,,,,,,,,129.3,13.4,72.9,43.0,0.46,0.19,-0.3
+9029,Team NF,,,,,,,,,,,,,,,,,,,,,,,,,101.0,25.4,60.5,15.0,0.45,-0.07,-0.3
+9067,The Goonies,,,,,,,,,,,,,,,,,,,,,,,,,41.4,8.9,23.7,8.8,0.39,-0.18,-0.3
+9128,ITKAN Robotics,COTS Swerve,,,,,,Over-the-Bumper,Horizontal & Vertical Extension,60-70 Fuel,Roller Conveyor,Drum Shooter (4+ Fuel Wide),Adjustable Hood (Single),"Trench, but Bump Only with Full Hopper",Floor Only,Anywhere in Alliance Zone,From Neutral Zone Only,20-25 BPS,2x Sweep-and-Score,Either Trench,,,No,None,,283.3,69.6,157.1,56.6,0.79,0.73,-0.3
+9245,Laker Dreadnoughts,,,,,,,,,,,,,,,,,,,,,,,,,129.1,38.9,59.6,30.6,0.70,0.07,-0.3
+9408,Warren Warbots,,,,,,,,,,,,,,,,,,,,,,,,,165.7,33.9,90.0,41.8,0.63,0.20,-0.3
+9450,Velocity Raptors,COTS Swerve,,,,,,Through-the-Bumper,Fixed,<10 Fuel,Belt Conveyor,Single Turret,Adjustable Hood (Single),Trench and Bump,Floor Only,Anywhere in Alliance Zone,From Anywhere On Field,5-10 BPS,,,,,,,,109.3,19.0,63.0,27.2,0.41,-0.16,-0.3
+10291,MUTUM-X,,,,,,,,,,,,,,,,,,,,,,,L1 (Side of Tower Only),,50.0,20.3,17.9,11.8,0.13,-0.23,-0.3
+10553,Orange Overdrive,,,,,,,,,,,,,,,,,,,,,,,,,66.2,18.4,35.6,12.2,0.14,-0.19,-0.3
+10903,The Ionizers,,,,,,,,,,,,,,,,,,,,,,,,,72.9,16.4,38.3,18.2,0.41,-0.17,-0.3
+10935,Krono,,,,,,,,,,,,,,,,,,,,,,,,,23.7,5.2,12.7,5.9,0.07,-0.22,-0.3
+10979,Tiger Robotics,,,,,,,,,,,,,,,,,,,,,,,,,36.7,6.7,20.5,9.5,-0.03,-0.19,-0.3
+11463,SHC Robotics,,,,,,,,,,,,,,,,,,,,,,,,,23.3,5.3,11.5,6.5,0.02,-0.14,-0.3

@@ -152,6 +152,22 @@ export function bootstrapDatabase(db: Database.Database): void {
       FOREIGN KEY (team_number) REFERENCES teams(team_number) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS team_capabilities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_key TEXT NOT NULL,
+      team_number INTEGER NOT NULL,
+      capability_name TEXT NOT NULL,
+      capability_value TEXT,
+      source TEXT NOT NULL DEFAULT 'manual',
+      observed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (event_key, team_number, capability_name, source),
+      FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE,
+      FOREIGN KEY (team_number) REFERENCES teams(team_number) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_team_capabilities_event_team
+      ON team_capabilities(event_key, team_number);
+
     CREATE INDEX IF NOT EXISTS idx_matches_event_key ON matches(event_key);
     CREATE INDEX IF NOT EXISTS idx_match_alliances_match_id ON match_alliances(match_id);
     CREATE INDEX IF NOT EXISTS idx_pit_observations_event_team ON pit_observations(event_key, team_number);

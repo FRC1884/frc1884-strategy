@@ -1,5 +1,5 @@
 const { useState, useEffect, useRef, useCallback } = React;
-const { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star } = LucideReact;
+const { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star, Settings } = LucideReact;
 
 const MATCHES = [
   { match:5,  day:"Sat 3/14", time:"9:26 AM",  red:[9218,10343,9199], blue:[1156,7565,1884],    our:'blue', stn:3 },
@@ -865,19 +865,20 @@ var NEWTON_PITCH = {
   ]
 };
 
-var PLACEHOLDER_MATCHES = [
-  {match:1,  day:"Wed 4/29", time:"9:00 AM",  red:[148,386,4253],   blue:[180,233,599]},
-  {match:2,  day:"Wed 4/29", time:"9:45 AM",  red:[1884,2046,5414], blue:[341,4590,973],   our:'red',  stn:1},
-  {match:3,  day:"Wed 4/29", time:"10:30 AM", red:[1577,2067,8046], blue:[1540,2713,3005]},
-  {match:4,  day:"Wed 4/29", time:"11:15 AM", red:[604,5549,3354],  blue:[5951,1884,2052], our:'blue', stn:2},
-  {match:5,  day:"Thu 4/30", time:"9:00 AM",  red:[1902,1540,1884], blue:[687,195,6647],   our:'red',  stn:3},
-  {match:6,  day:"Thu 4/30", time:"10:00 AM", red:[346,5414,233],   blue:[2052,4253,386]},
-  {match:7,  day:"Thu 4/30", time:"11:30 AM", red:[3966,599,4590],  blue:[1884,148,5951],  our:'blue', stn:1},
-  {match:8,  day:"Thu 4/30", time:"1:30 PM",  red:[180,8046,2067],  blue:[341,1577,6647]},
-  {match:9,  day:"Fri 5/1",  time:"9:30 AM",  red:[2713,1884,1540], blue:[5549,4253,4590], our:'red',  stn:2},
-  {match:10, day:"Fri 5/1",  time:"10:45 AM", red:[148,1577,5414],  blue:[180,233,1902]},
-  {match:11, day:"Fri 5/1",  time:"11:30 AM", red:[2052,5951,386],  blue:[604,2046,1884],  our:'blue', stn:3},
-  {match:12, day:"Fri 5/1",  time:"1:00 PM",  red:[341,3354,8046],  blue:[2783,599,3005]}
+var NEWTON_PRACTICE_MATCHES = [
+  {match:1,  day:"Wed 4/29", time:"5:00 PM", red:[599,6352,233],   blue:[180,9450,10903]},
+  {match:2,  day:"Wed 4/29", time:"5:10 PM", red:[8046,1577,2783], blue:[7160,10935,2194]},
+  {match:3,  day:"Wed 4/29", time:"5:20 PM", red:[8373,1108,2910], blue:[9245,3256,9067]},
+  {match:4,  day:"Wed 4/29", time:"5:30 PM", red:[1833,3966,4590], blue:[948,4206,195]},
+  {match:5,  day:"Wed 4/29", time:"5:40 PM", red:[6988,11463,3276],blue:[6436,2046,148]},
+  {match:6,  day:"Wed 4/29", time:"5:50 PM", red:[9128,5216,2052], blue:[5951,2586,10553]},
+  {match:7,  day:"Wed 4/29", time:"6:00 PM", red:[4099,341,1796],  blue:[2370,2996,424]},
+  {match:8,  day:"Wed 4/29", time:"6:10 PM", red:[1540,10291,10979],blue:[2067,5948,386]},
+  {match:9,  day:"Wed 4/29", time:"6:20 PM", red:[6647,346,3044],  blue:[695,818,1902]},
+  {match:10, day:"Wed 4/29", time:"6:30 PM", red:[3354,5414,9408], blue:[868,604,4561]},
+  {match:11, day:"Wed 4/29", time:"6:40 PM", red:[3005,1807,4253], blue:[2713,9029,88]},
+  {match:12, day:"Wed 4/29", time:"6:50 PM", red:[930,1922,687],   blue:[1884,973,6036],  our:'blue', stn:1},
+  {match:13, day:"Wed 4/29", time:"7:00 PM", red:[5736,4400,9450], blue:[5549,7160,10935]}
 ];
 
 // === EVENT REGISTRY ==========================================================
@@ -899,7 +900,6 @@ var EVENTS = {
     overviewBlurb: { type: 'no-climb' },
     rules: RULES,
     storageKey: 'frc-v12-brazil',
-    scheduleIsPlaceholder: false,
     apiEventKey: '2026brazil',
     apiTimeZone: 'America/Sao_Paulo',
   },
@@ -911,7 +911,7 @@ var EVENTS = {
     dates: 'Apr 29 - May 2, 2026',
     teamCount: 75,
     fieldType: 'AndyMark field',
-    matches: PLACEHOLDER_MATCHES,
+    matches: NEWTON_PRACTICE_MATCHES,
     teams: NEWTON_TEAMS,
     scout: NEWTON_SCOUT,
     pitGrid: { NEWTON_TOP_1, NEWTON_TOP_2, NEWTON_TOP_3, NEWTON_TOP_4, NEWTON_BOT_1, NEWTON_BOT_2, NEWTON_BOT_3, NEWTON_BOT_4, NEWTON_BOT_5 },
@@ -919,7 +919,6 @@ var EVENTS = {
     overviewBlurb: { type: 'defender' },
     rules: RULES,
     storageKey: 'frc-v12-newton',
-    scheduleIsPlaceholder: true,
     tiers: NEWTON_TIERS,
     pitch: NEWTON_PITCH,
   },
@@ -1252,8 +1251,11 @@ function NewtonTierBadge(props){
 
 function NewtonPopupCard(props){
   var t=props.team; var note=props.note; var setNote=props.setNote; var onClose=props.onClose;
+  var liveSummary=props.liveSummary||{};
+  var onOpenFull=props.onOpenFull;
   var isUs=t.us;
   var sc=NEWTON_SCOUT[t.n];
+  var ls=liveSummary[String(t.n)];
   return (
     <div className={"bg-slate-800 border rounded-xl p-3 space-y-2 "+(sc&&sc.warn?'border-red-500/50':'border-blue-500/40')}>
       <div className="flex justify-between items-start gap-2">
@@ -1266,6 +1268,11 @@ function NewtonPopupCard(props){
         <button onClick={onClose} className="text-slate-400 text-xs px-2 shrink-0">x</button>
       </div>
       <p className="text-xs text-slate-400">{t.loc} <span className="text-slate-500">| Pit {t.pit}</span></p>
+      {ls&&ls.obsCount>0?(
+        <p className="text-xs text-blue-400/80">Live: {ls.obsCount} obs{relativeTime(ls.lastObservedAt)?' · '+relativeTime(ls.lastObservedAt):''}</p>
+      ):(
+        <p className="text-xs text-slate-500">Pre-Champs only</p>
+      )}
       {sc&&sc.notes&&(
         <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line border-t border-slate-700 pt-2">
           {sc.notes.replace(/ • /g,'\n')}
@@ -1274,6 +1281,12 @@ function NewtonPopupCard(props){
       <textarea value={note||''} onChange={function(e){setNote(e.target.value);}}
         placeholder="Our notes..."
         className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-xs h-16 resize-none"/>
+      {onOpenFull&&(
+        <button onClick={function(){onOpenFull(t.n);}}
+          className="w-full text-xs text-blue-400 hover:text-blue-300 border-t border-slate-700 pt-2 flex items-center justify-center gap-1">
+          Full data <span aria-hidden>▸</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -1283,6 +1296,8 @@ function NewtonPitMapView(props){
   var search=props.search; var popup=props.popup; var setPopup=props.setPopup;
   var getNote=props.getNote; var setNote=props.setNote;
   var tierFilter=props.tierFilter||'all';
+  var liveSummary=props.liveSummary||{};
+  var onOpenFull=props.onOpenFull;
   var sq=search.trim().toLowerCase();
   var popupTeam=null;
   if(popup){for(var i=0;i<event.teams.length;i++){if(event.teams[i].n===popup){popupTeam=event.teams[i];break;}}}
@@ -1291,7 +1306,7 @@ function NewtonPitMapView(props){
     <div className="space-y-3">
       <p className="text-xs text-slate-400">Tap pit for team info | corner letter = tier | YOU = us</p>
       {popup&&popupTeam&&(
-        <NewtonPopupCard team={popupTeam} note={getNote(popup)} setNote={function(v){setNote(popup,v);}} onClose={function(){setPopup(null);}}/>
+        <NewtonPopupCard team={popupTeam} note={getNote(popup)} setNote={function(v){setNote(popup,v);}} onClose={function(){setPopup(null);}} liveSummary={liveSummary} onOpenFull={onOpenFull}/>
       )}
       <div className="bg-slate-800/40 border border-slate-600 rounded-xl p-3 space-y-3 overflow-x-auto">
         <div className="flex gap-2 items-end" style={{minWidth:'fit-content'}}>
@@ -1325,6 +1340,8 @@ function NewtonPitMapTab(props){
   var searchSt=useState(''); var search=searchSt[0]; var setSearch=searchSt[1];
   var tierSt=useState('all'); var tier=tierSt[0]; var setTier=tierSt[1];
   var popupSt=useState(null); var popup=popupSt[0]; var setPopup=popupSt[1];
+  var openTeamSt=useState(null); var openTeam=openTeamSt[0]; var setOpenTeam=openTeamSt[1];
+  var liveSummary=useNewtonLiveSummary(NEWTON_API_EVENT_KEY, 0);
   return (
     <div className="space-y-3">
       <div className="relative">
@@ -1342,7 +1359,735 @@ function NewtonPitMapTab(props){
           );
         })}
       </div>
-      <NewtonPitMapView event={event} search={search} popup={popup} setPopup={setPopup} getNote={getNote} setNote={setNote} tierFilter={tier}/>
+      <NewtonPitMapView event={event} search={search} popup={popup} setPopup={setPopup} getNote={getNote} setNote={setNote} tierFilter={tier} liveSummary={liveSummary} onOpenFull={setOpenTeam}/>
+      {openTeam!==null&&(
+        <TeamDetailModal teamNumber={openTeam} apiEventKey={NEWTON_API_EVENT_KEY}
+          onClose={function(){setOpenTeam(null);}}/>
+      )}
+    </div>
+  );
+}
+
+// ===== Newton team detail modal =============================================
+// 4A: modal frame + Pre-scouting tab. 4B: Houston live panel + refresh wiring + card live line.
+// Top-level components only (do not nest).
+
+var NEWTON_API_EVENT_KEY = '2026new';
+
+function relativeTime(iso){
+  if(!iso) return null;
+  var ms=Date.parse(iso);
+  if(!isFinite(ms)) return null;
+  var diff=Date.now()-ms;
+  if(diff<0) return 'just now';
+  if(diff<60000) return 'just now';
+  if(diff<3600000) return Math.round(diff/60000)+'m ago';
+  if(diff<86400000) return Math.round(diff/3600000)+'h ago';
+  return Math.round(diff/86400000)+'d ago';
+}
+
+function safeParseNotes(raw){
+  if(!raw||typeof raw!=='string') return null;
+  try{ var v=JSON.parse(raw); return (v&&typeof v==='object')?v:null; }catch(e){ return null; }
+}
+
+function useNewtonLiveSummary(apiEventKey, refreshNonce){
+  var dataSt=useState({}); var data=dataSt[0]; var setData=dataSt[1];
+  useEffect(function(){
+    if(!apiEventKey) return;
+    var cancelled=false;
+    fetch('/api/events/'+apiEventKey+'/teams/live-summary')
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(j){ if(!cancelled){ setData((j&&j.summary)||{}); } })
+      .catch(function(){ if(!cancelled){ setData({}); } });
+    return function(){ cancelled=true; };
+  },[apiEventKey, refreshNonce]);
+  return data;
+}
+
+function NewtonRefreshBar(props){
+  var apiEventKey=props.apiEventKey;
+  var lastRefreshAt=props.lastRefreshAt;
+  var refreshing=props.refreshing;
+  var error=props.error;
+  var onRefresh=props.onRefresh;
+  var rel=lastRefreshAt?relativeTime(lastRefreshAt):null;
+  return (
+    <div className="flex items-center justify-between bg-slate-800/40 border border-slate-700 rounded-lg px-3 py-2 text-xs">
+      <div className="text-slate-400 min-w-0 truncate">
+        {refreshing?'Refreshing…':(rel?'Updated '+rel:'Not yet refreshed')}
+        {error&&<span className="text-red-400 ml-2">· {error}</span>}
+      </div>
+      <button onClick={onRefresh} disabled={refreshing}
+        className={"flex items-center gap-1 px-2 py-1 rounded border "+(refreshing?'border-slate-700 text-slate-500':'border-slate-600 text-slate-200 hover:border-slate-400')}>
+        <RotateCcw className="w-3 h-3"/>
+        <span>Refresh</span>
+      </button>
+    </div>
+  );
+}
+
+function useNewtonRefresher(apiEventKey){
+  var nonceSt=useState(0);     var nonce=nonceSt[0];     var setNonce=nonceSt[1];
+  var lastSt=useState(null);   var lastRefreshAt=lastSt[0]; var setLast=lastSt[1];
+  var busySt=useState(false);  var refreshing=busySt[0]; var setBusy=busySt[1];
+  var errSt=useState(null);    var error=errSt[0];       var setError=errSt[1];
+
+  function trigger(){
+    if(refreshing) return;
+    setBusy(true); setError(null);
+    var path='/api/integrations/scout-sheet/events/'+apiEventKey+'/ingest';
+    fetch(path,{method:'POST'})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, body:j}; }); })
+      .then(function(res){
+        if(!res.ok){ throw new Error((res.body&&res.body.error)||'scout_sheet_failed'); }
+        return fetch('/api/integrations/tba/events/'+apiEventKey+'/ingest-oprs',{method:'POST'})
+          .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); });
+      })
+      .then(function(res){
+        if(res.status===503&&res.body&&res.body.error_code==='tba_key_not_configured'){
+          // Expected until Mariano configures the env var. Swallow.
+          return;
+        }
+        if(res.status<200||res.status>=300){
+          throw new Error((res.body&&res.body.error)||'tba_oprs_failed');
+        }
+      })
+      .then(function(){
+        setLast(new Date().toISOString());
+        setNonce(function(v){return v+1;});
+        setBusy(false);
+      })
+      .catch(function(e){
+        setError(e&&e.message?e.message:'refresh_failed');
+        setBusy(false);
+      });
+  }
+
+  return { nonce:nonce, lastRefreshAt:lastRefreshAt, refreshing:refreshing, error:error, trigger:trigger };
+}
+
+// Spec §5.4 says "18 total"; the enumerated list under it has 19 (14 pre-scouting + 5 live).
+// 19 is correct — spec wording will be updated when we commit. This catalog is the source of truth.
+var TEAM_DETAIL_CHIPS = [
+  // Live (5) — defender-pick defaults sit here
+  { id:'defence_rating',      label:'Defence',         source:'live' },
+  { id:'last_seen',           label:'Last seen',       source:'live' },
+  { id:'avg_scoring_cyc',     label:'Avg score cyc',   source:'live' },
+  { id:'avg_ferrying_cyc',    label:'Avg ferry cyc',   source:'live' },
+  { id:'climb_success',       label:'Climb success',   source:'live' },
+  // Pre-scouting (14)
+  { id:'epa',                 label:'EPA',             source:'pre' },
+  { id:'epa_auto',            label:'Auto EPA',        source:'pre' },
+  { id:'epa_teleop',          label:'Teleop EPA',      source:'pre' },
+  { id:'epa_endgame',         label:'Endgame EPA',     source:'pre' },
+  { id:'epa_rp_energized',    label:'RP Energized',    source:'pre' },
+  { id:'epa_rp_supercharged', label:'RP Supercharged', source:'pre' },
+  { id:'epa_rp_traversal',    label:'RP Traversal',    source:'pre' },
+  { id:'climb',               label:'Climb',           source:'pre' },
+  { id:'shooter_type',        label:'Shooter',         source:'pre' },
+  { id:'hopper_capacity',     label:'Hopper',          source:'pre' },
+  { id:'intake_type',         label:'Intake',          source:'pre' },
+  { id:'bps',                 label:'BPS',             source:'pre' },
+  { id:'drivetrain',          label:'Drivetrain',      source:'pre' },
+  { id:'trench_bump',         label:'Trench/Bump',     source:'pre' }
+];
+
+// Default 5 chips per spec §5.3 — most-glanceable left, defender-pick context.
+var TEAM_DETAIL_DEFAULT_PREF = ['defence_rating','epa','climb','bps','last_seen'];
+
+var TEAM_DETAIL_CHIPS_BY_ID = (function(){
+  var out={}; for(var i=0;i<TEAM_DETAIL_CHIPS.length;i++){ out[TEAM_DETAIL_CHIPS[i].id]=TEAM_DETAIL_CHIPS[i]; } return out;
+})();
+
+function teamDetailDisplay(v){
+  if(v===null||v===undefined||v==='') return '—';
+  return v;
+}
+
+function teamDetailFmtNum(v){
+  if(v===null||v===undefined||typeof v!=='number'||!isFinite(v)) return '—';
+  return Math.round(v*10)/10;
+}
+
+function teamDetailIndexBy(rows, key, valueKey){
+  var out={};
+  if(!rows) return out;
+  for(var i=0;i<rows.length;i++){
+    out[rows[i][key]] = rows[i][valueKey];
+  }
+  return out;
+}
+
+function teamDetailChipValue(chip, capByName, metricByName, observations){
+  switch(chip.id){
+    case 'epa':                  return teamDetailFmtNum(metricByName['prescouting.epa.total']);
+    case 'epa_auto':             return teamDetailFmtNum(metricByName['prescouting.epa.auto']);
+    case 'epa_teleop':           return teamDetailFmtNum(metricByName['prescouting.epa.teleop']);
+    case 'epa_endgame':          return teamDetailFmtNum(metricByName['prescouting.epa.endgame']);
+    case 'epa_rp_energized':     return teamDetailFmtNum(metricByName['prescouting.epa.rp_energized']);
+    case 'epa_rp_supercharged':  return teamDetailFmtNum(metricByName['prescouting.epa.rp_supercharged']);
+    case 'epa_rp_traversal':     return teamDetailFmtNum(metricByName['prescouting.epa.rp_traversal']);
+    case 'climb':                return teamDetailDisplay(capByName.endgame_climb);
+    case 'shooter_type':         return teamDetailDisplay(capByName.shooter_type);
+    case 'hopper_capacity':      return teamDetailDisplay(capByName.hopper_capacity);
+    case 'intake_type':          return teamDetailDisplay(capByName.intake_type);
+    case 'bps':                  return teamDetailDisplay(capByName.bps);
+    case 'drivetrain':           return teamDetailDisplay(capByName.drivetrain);
+    case 'trench_bump':          return teamDetailDisplay(capByName.trench_bump);
+    case 'defence_rating':
+      // Source field "Defence quality" is qualitative — numeric aggregation deferred.
+      return '—';
+    case 'last_seen':
+      if(!observations||!observations.length) return '—';
+      var latest=null;
+      for(var i=0;i<observations.length;i++){
+        var t=observations[i].observed_at;
+        if(t&&(latest===null||t>latest)) latest=t;
+      }
+      return latest?(relativeTime(latest)||'—'):'—';
+    case 'avg_scoring_cyc':      return teamDetailFmtNum(metricByName['scout.avg_scoring_cycles']);
+    case 'avg_ferrying_cyc':     return teamDetailFmtNum(metricByName['scout.avg_ferrying_cycles']);
+    case 'climb_success':
+      var v=metricByName['scout.climb_success_rate'];
+      if(v===undefined||v===null) return '—';
+      return Math.round(v*100)+'%';
+  }
+  return '—';
+}
+
+function useChipPreference(){
+  var prefSt=useState(function(){
+    try{
+      var raw=localStorage.getItem('frc-newton-modal-chips');
+      if(!raw) return TEAM_DETAIL_DEFAULT_PREF.slice();
+      var arr=JSON.parse(raw);
+      if(!Array.isArray(arr)||arr.length!==5) return TEAM_DETAIL_DEFAULT_PREF.slice();
+      var seen={};
+      for(var i=0;i<arr.length;i++){
+        if(!TEAM_DETAIL_CHIPS_BY_ID[arr[i]]) return TEAM_DETAIL_DEFAULT_PREF.slice();
+        if(seen[arr[i]]) return TEAM_DETAIL_DEFAULT_PREF.slice();
+        seen[arr[i]]=true;
+      }
+      return arr;
+    }catch(e){ return TEAM_DETAIL_DEFAULT_PREF.slice(); }
+  });
+  var prefs=prefSt[0]; var setPrefsRaw=prefSt[1];
+  function setPrefs(next){
+    setPrefsRaw(next);
+    try{ localStorage.setItem('frc-newton-modal-chips', JSON.stringify(next)); }catch(e){}
+  }
+  return [prefs, setPrefs];
+}
+
+function useTeamFull(apiEventKey, teamNumber, externalNonce){
+  var dataSt=useState(null);    var data=dataSt[0];       var setData=dataSt[1];
+  var loadingSt=useState(true); var loading=loadingSt[0]; var setLoading=loadingSt[1];
+  var errSt=useState(null);     var error=errSt[0];       var setError=errSt[1];
+  var versionSt=useState(0);    var version=versionSt[0]; var setVersion=versionSt[1];
+  var stampSt=useState(null);   var lastUpdatedAt=stampSt[0]; var setStamp=stampSt[1];
+
+  useEffect(function(){
+    if(!apiEventKey||!teamNumber) return;
+    var cancelled=false;
+    setLoading(true); setError(null);
+    fetch('/api/events/'+apiEventKey+'/teams/'+teamNumber+'/full')
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(j){ if(!cancelled){ setData(j); setStamp(new Date().toISOString()); setLoading(false); } })
+      .catch(function(e){ if(!cancelled){ setError(e&&e.message?e.message:'fetch_failed'); setLoading(false); } });
+    return function(){ cancelled=true; };
+  },[apiEventKey, teamNumber, version, externalNonce]);
+
+  function refetch(){ setVersion(function(v){return v+1;}); }
+  return { data:data, loading:loading, error:error, refetch:refetch, lastUpdatedAt:lastUpdatedAt };
+}
+
+function TeamDetailChipStrip(props){
+  var prefs=props.prefs;
+  var capByName=props.capByName; var metricByName=props.metricByName; var observations=props.observations;
+  var onOpenChooser=props.onOpenChooser;
+  var hintSt=useState(null); var hintId=hintSt[0]; var setHintId=hintSt[1];
+
+  var hintChip=hintId?TEAM_DETAIL_CHIPS_BY_ID[hintId]:null;
+  var hintMsg=hintChip?(hintChip.source==='live'?'Not yet scouted at Newton':'Pre-Champs data only — no entry in CSV'):null;
+
+  return (
+    <div className="border-b border-slate-700">
+      <div className="flex gap-2 px-3 pt-2 pb-1.5 overflow-x-auto">
+        {prefs.map(function(id){
+          var c=TEAM_DETAIL_CHIPS_BY_ID[id]; if(!c) return null;
+          var v=teamDetailChipValue(c, capByName, metricByName, observations);
+          var isEmpty=v==='—';
+          return (
+            <div key={c.id}
+              className="rounded-lg bg-slate-800/60 border border-slate-700 px-2 py-1 text-center shrink-0" style={{minWidth:72}}>
+              <div className="text-slate-500 uppercase tracking-wide" style={{fontSize:10}}>{c.label}</div>
+              <div className={"text-sm font-bold flex items-center justify-center gap-1 "+(isEmpty?'text-slate-500':'')}>
+                <span>{v}</span>
+                {isEmpty&&(
+                  <button onClick={function(){ setHintId(hintId===c.id?null:c.id); }}
+                    className="text-slate-500 hover:text-slate-200" aria-label="Why empty?">
+                    <span className="rounded-full border border-slate-600 inline-flex items-center justify-center font-normal"
+                      style={{width:14,height:14,fontSize:10,lineHeight:1}}>?</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="px-3 pb-1.5">
+        <button onClick={onOpenChooser}
+          className="text-slate-500 hover:text-slate-200 flex items-center gap-1"
+          style={{fontSize:11}}
+          aria-label="Customise chips">
+          <Settings className="w-3 h-3"/>
+          <span>Customize</span>
+        </button>
+      </div>
+      {hintChip&&(
+        <div className="px-3 py-1 text-xs flex items-center justify-between bg-slate-800/40 border-t border-slate-700">
+          <span className="text-slate-300"><span className="font-bold text-slate-200">{hintChip.label}:</span> {hintMsg}</span>
+          <button onClick={function(){setHintId(null);}} className="text-slate-500 hover:text-slate-200 px-1" aria-label="Dismiss">×</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChipChooserModal(props){
+  var prefs=props.prefs; var setPrefs=props.setPrefs; var onClose=props.onClose;
+  var armedSt=useState(null); var armed=armedSt[0]; var setArmed=armedSt[1];
+
+  useEffect(function(){
+    var prev=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return function(){ document.body.style.overflow=prev; };
+  },[]);
+
+  useEffect(function(){
+    function onKey(e){ if(e.key==='Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return function(){ window.removeEventListener('keydown', onKey); };
+  },[onClose]);
+
+  function indexOfPref(id){ for(var i=0;i<prefs.length;i++){ if(prefs[i]===id) return i; } return -1; }
+
+  function tap(id){
+    if(armed===null){ setArmed(id); return; }
+    if(armed===id){ setArmed(null); return; }
+    var ai=indexOfPref(armed); var bi=indexOfPref(id);
+    var next=prefs.slice();
+    if(ai>=0&&bi>=0){          // both selected — swap slot positions
+      next[ai]=id; next[bi]=armed;
+    } else if(ai>=0&&bi<0){    // armed selected, target unselected — replace
+      next[ai]=id;
+    } else if(ai<0&&bi>=0){    // armed unselected, target selected — replace
+      next[bi]=armed;
+    } else {                    // both unselected — re-arm to the new one
+      setArmed(id); return;
+    }
+    setPrefs(next);
+    setArmed(null);
+  }
+
+  function reset(){ setPrefs(TEAM_DETAIL_DEFAULT_PREF.slice()); setArmed(null); }
+
+  var armedChip=armed?TEAM_DETAIL_CHIPS_BY_ID[armed]:null;
+
+  return (
+    <div className="fixed inset-0 bg-slate-900 flex flex-col" style={{zIndex:60}}>
+      <div className="flex items-center justify-between border-b border-slate-700 px-3 py-2 shrink-0">
+        <div className="text-xs text-slate-400">Customise chips</div>
+        <button onClick={onClose} className="text-slate-300 hover:text-white px-3 py-1 text-2xl leading-none" aria-label="Close">×</button>
+      </div>
+      <div className="px-4 py-2 text-xs text-slate-400 shrink-0 border-b border-slate-700/60">
+        {armedChip?(
+          <span><span className="text-blue-300 font-bold">{armedChip.label}</span> armed — tap another chip to swap, or tap it again to cancel.</span>
+        ):(
+          <span>Tap a chip to arm it, then tap another to swap. Numbered chips are your active 5.</span>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="grid grid-cols-2 gap-2">
+          {TEAM_DETAIL_CHIPS.map(function(c){
+            var slot=indexOfPref(c.id);
+            var isSelected=slot>=0;
+            var isArmed=armed===c.id;
+            var bg;
+            if(isArmed){ bg='bg-blue-500/30 border-blue-400 ring-2 ring-blue-400'; }
+            else if(isSelected){ bg='bg-slate-700 border-slate-500'; }
+            else { bg='bg-slate-800/40 border-slate-700 opacity-80'; }
+            var tagCls=c.source==='live'
+              ?'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+              :'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+            return (
+              <button key={c.id} onClick={function(){tap(c.id);}}
+                className={"rounded-lg border px-2 py-2 text-left flex items-center gap-2 "+bg}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold truncate">{c.label}</span>
+                    <span className={"text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded shrink-0 "+tagCls}>{c.source}</span>
+                  </div>
+                </div>
+                {isSelected&&(
+                  <span className="text-xs bg-blue-500/40 text-white px-1.5 py-0.5 rounded font-bold shrink-0">{slot+1}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div className="border-t border-slate-700 p-3 flex justify-between items-center shrink-0">
+        <button onClick={reset} className="text-xs text-slate-400 hover:text-white">Reset to defaults</button>
+        <button onClick={onClose} className="text-sm bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded">Done</button>
+      </div>
+    </div>
+  );
+}
+
+function TeamDetailPreScoutingPanel(props){
+  var capByName=props.capByName; var metricByName=props.metricByName; var sc=props.sc;
+
+  var capSpec=[
+    ['drivetrain',     'Drivetrain'],
+    ['robot_weight',   'Weight'],
+    ['robot_width',    'Width'],
+    ['robot_length',   'Length'],
+    ['robot_height',   'Height'],
+    ['intake_type',    'Intake'],
+    ['hopper_capacity','Hopper capacity'],
+    ['indexer_type',   'Indexer'],
+    ['shooter_type',   'Shooter'],
+    ['shooter_hood',   'Shooter hood'],
+    ['bps',            'Balls / sec'],
+    ['trench_bump',    'Trench / Bump'],
+    ['endgame_climb',  'Climb level']
+  ];
+  var epaSpec=[
+    ['total',           'EPA total'],
+    ['auto',            'Auto'],
+    ['teleop',          'Teleop'],
+    ['endgame',         'Endgame'],
+    ['rp_energized',    'RP Energized'],
+    ['rp_supercharged', 'RP Supercharged'],
+    ['rp_traversal',    'RP Traversal']
+  ];
+  var comments=capByName.comments;
+
+  return (
+    <div className="space-y-4">
+      <section>
+        <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Capability</h3>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+          {capSpec.map(function(p){
+            return (
+              <div key={p[0]} className="flex flex-col">
+                <span className="text-xs text-slate-500">{p[1]}</span>
+                <span className="font-medium">{teamDetailDisplay(capByName[p[0]])}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section>
+        <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">EPA breakdown</h3>
+        <div className="grid grid-cols-3 gap-2 text-sm">
+          {epaSpec.map(function(p){
+            var v=teamDetailFmtNum(metricByName['prescouting.epa.'+p[0]]);
+            var isEmpty=v==='—';
+            return (
+              <div key={p[0]} className="rounded bg-slate-800/50 border border-slate-700 px-2 py-1.5">
+                <div className="text-xs text-slate-500">{p[1]}</div>
+                <div className={"font-bold "+(isEmpty?'text-slate-500':'')}>{v}</div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      {comments&&(
+        <section>
+          <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Comments</h3>
+          <p className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">{comments}</p>
+        </section>
+      )}
+      {sc&&sc.notes&&(
+        <section>
+          <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-1">Pre-Champs scout notes</h3>
+          <p className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">{sc.notes.replace(/ • /g,'\n')}</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function TeamDetailLivePanel(props){
+  var metricByName=props.metricByName; var observations=props.observations||[];
+
+  var aggregates=[
+    ['scout.matches_observed',  'Matches'],
+    ['scout.avg_scoring_cycles','Avg scoring cyc'],
+    ['scout.avg_ferrying_cycles','Avg ferrying cyc'],
+    ['scout.climb_attempts',    'Climb attempts'],
+    ['scout.climb_success_rate','Climb success']
+  ];
+  var anyAggregate=false;
+  for(var k=0;k<aggregates.length;k++){ if(metricByName[aggregates[k][0]]!==undefined){ anyAggregate=true; break; } }
+
+  var hasTba=false;
+  for(var key in metricByName){ if(key.indexOf('tba.')===0){ hasTba=true; break; } }
+
+  return (
+    <div className="space-y-4">
+      <section>
+        <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Aggregated summary</h3>
+        {anyAggregate?(
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {aggregates.map(function(p){
+              var raw=metricByName[p[0]];
+              var v;
+              if(raw===undefined||raw===null){ v='—'; }
+              else if(p[0]==='scout.climb_success_rate'){ v=Math.round(raw*100)+'%'; }
+              else if(p[0]==='scout.matches_observed'||p[0]==='scout.climb_attempts'){ v=Math.round(raw); }
+              else { v=teamDetailFmtNum(raw); }
+              var isEmpty=v==='—';
+              return (
+                <div key={p[0]} className="rounded bg-slate-800/50 border border-slate-700 px-2 py-1.5">
+                  <div className="text-xs text-slate-500">{p[1]}</div>
+                  <div className={"font-bold "+(isEmpty?'text-slate-500':'')}>{v}</div>
+                </div>
+              );
+            })}
+          </div>
+        ):(
+          <p className="text-sm text-slate-400 italic">No live observations yet — tap Refresh on the Teams tab to pull from the scout sheet.</p>
+        )}
+      </section>
+      <section>
+        <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Per-match observations</h3>
+        {observations.length===0?(
+          <p className="text-sm text-slate-400 italic">No matches scouted yet.</p>
+        ):(
+          <div className="space-y-1.5">
+            {observations.map(function(o,idx){
+              return <TeamDetailObservationCard key={(o.match_key||idx)+'-'+(o.observed_at||idx)} obs={o}/>;
+            })}
+          </div>
+        )}
+      </section>
+      <section>
+        <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">TBA OPR</h3>
+        {hasTba?(
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {Object.keys(metricByName).filter(function(n){return n.indexOf('tba.')===0;}).sort().map(function(name){
+              return (
+                <div key={name} className="rounded bg-slate-800/50 border border-slate-700 px-2 py-1.5">
+                  <div className="text-xs text-slate-500">{name.replace(/^tba\./,'')}</div>
+                  <div className="font-bold">{teamDetailFmtNum(metricByName[name])}</div>
+                </div>
+              );
+            })}
+          </div>
+        ):(
+          <p className="text-sm text-slate-400 italic">Live OPR not yet available (needs ~30 matches played and Newton-server config).</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function TeamDetailObservationCard(props){
+  var o=props.obs;
+  var openSt=useState(false); var open=openSt[0]; var setOpen=openSt[1];
+  var fields=safeParseNotes(o.notes);
+  var rel=relativeTime(o.observed_at);
+  var label='Match '+(o.match_number||'?');
+  if(o.scouter) label+=' · '+o.scouter;
+  if(rel) label+=' · '+rel;
+  return (
+    <div className="rounded bg-slate-800/40 border border-slate-700">
+      <button onClick={function(){setOpen(!open);}}
+        className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2">
+        <span className="truncate">{label}</span>
+        <span className="text-slate-500 text-xs shrink-0">{open?'▾':'▸'}</span>
+      </button>
+      {open&&(
+        <div className="px-3 pb-2 text-xs space-y-1 border-t border-slate-700/60">
+          {fields?Object.keys(fields).map(function(k){
+            return (
+              <div key={k} className="flex gap-2">
+                <span className="text-slate-500 shrink-0" style={{minWidth:140}}>{k}</span>
+                <span className="text-slate-200">{String(fields[k])}</span>
+              </div>
+            );
+          }):(
+            <div className="text-slate-500 italic">No structured fields on this observation.</div>
+          )}
+          {typeof o.fuel_scored==='number'&&(
+            <div className="flex gap-2 pt-1 border-t border-slate-700/60">
+              <span className="text-slate-500 shrink-0" style={{minWidth:140}}>fuel_scored</span>
+              <span className="text-slate-200">{o.fuel_scored}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+var TEAM_DETAIL_GLOSSARY = [
+  ['EPA', 'Expected Points Added (per match), seasonal estimate from Statbotics'],
+  ['Auto EPA', 'EPA from the autonomous period'],
+  ['Teleop EPA', 'EPA from the teleop period'],
+  ['Endgame EPA', 'EPA from endgame (climb)'],
+  ['RP Energized', 'Probability of earning the 100+ fuel ranking point'],
+  ['RP Supercharged', 'Probability of earning the 360+ fuel ranking point'],
+  ['RP Traversal', 'Probability of earning the 50+ climb-points ranking point'],
+  ['BPS', 'Balls Per Second (max fuel scoring rate)'],
+  ['Climb', 'Highest level the robot can climb to (None / 1 / 2 / 3)'],
+  ['Defence', 'Subjective rating from live scouts at the event'],
+  ['Last seen', 'Most recent live scout observation timestamp']
+];
+
+function TeamDetailGlossary(){
+  var openSt=useState(function(){
+    try{
+      var s=localStorage.getItem('frc-newton-modal-glossary');
+      return s==='expanded';
+    }catch(e){ return false; }
+  });
+  var open=openSt[0]; var setOpen=openSt[1];
+  function toggle(){
+    var next=!open;
+    setOpen(next);
+    try{ localStorage.setItem('frc-newton-modal-glossary', next?'expanded':'collapsed'); }catch(e){}
+  }
+  return (
+    <div className="border-b border-slate-700 shrink-0">
+      <button onClick={toggle}
+        className="w-full px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1">
+        <span aria-hidden>{open?'▾':'▸'}</span>
+        <span>What do the abbreviations mean?</span>
+      </button>
+      {open&&(
+        <div className="px-3 pb-2 text-xs grid gap-x-3 gap-y-1" style={{gridTemplateColumns:'auto 1fr'}}>
+          {TEAM_DETAIL_GLOSSARY.map(function(row,i){
+            return [
+              <span key={'k'+i} className="text-slate-200 font-bold whitespace-nowrap">{row[0]}</span>,
+              <span key={'v'+i} className="text-slate-400">{row[1]}</span>
+            ];
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TeamDetailModal(props){
+  var teamNumber=props.teamNumber;
+  var apiEventKey=props.apiEventKey;
+  var onClose=props.onClose;
+  var externalNonce=props.refreshNonce;
+
+  var fullSt=useTeamFull(apiEventKey, teamNumber, externalNonce);
+  var data=fullSt.data; var loading=fullSt.loading; var error=fullSt.error; var refetch=fullSt.refetch;
+  var lastUpdatedAt=fullSt.lastUpdatedAt;
+
+  var prefPair=useChipPreference();
+  var chipPrefs=prefPair[0]; var setChipPrefs=prefPair[1];
+  var chooserSt=useState(false); var chooserOpen=chooserSt[0]; var setChooserOpen=chooserSt[1];
+
+  var tabSt=useState(function(){
+    try{ var s=localStorage.getItem('frc-newton-modal-tab'); if(s==='pre'||s==='live') return s; }catch(e){}
+    return 'pre';
+  });
+  var tab=tabSt[0]; var setTab=tabSt[1];
+  function selectTab(next){
+    setTab(next);
+    try{ localStorage.setItem('frc-newton-modal-tab', next); }catch(e){}
+  }
+
+  useEffect(function(){
+    function onKey(e){ if(e.key==='Escape') onClose(); }
+    window.addEventListener('keydown', onKey);
+    return function(){ window.removeEventListener('keydown', onKey); };
+  },[onClose]);
+
+  useEffect(function(){
+    var prev=document.body.style.overflow;
+    document.body.style.overflow='hidden';
+    return function(){ document.body.style.overflow=prev; };
+  },[]);
+
+  var teamObj=null;
+  for(var i=0;i<NEWTON_TEAMS.length;i++){ if(NEWTON_TEAMS[i].n===teamNumber){ teamObj=NEWTON_TEAMS[i]; break; } }
+  var sc=NEWTON_SCOUT[teamNumber];
+
+  var capByName=teamDetailIndexBy(data&&data.capabilities, 'capability_name', 'capability_value');
+  var metricByName=teamDetailIndexBy(data&&data.metrics, 'metric_name', 'metric_value');
+
+  var displayName=(data&&data.team&&data.team.name)||(teamObj&&teamObj.name)||('Team '+teamNumber);
+  var pitLabel=teamObj&&teamObj.pit?'Pit '+teamObj.pit:null;
+  var tierInfo=sc?tierInfoFor(sc.tier):null;
+
+  var observations=(data&&data.matchObservations)||[];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col">
+      <div className="flex items-center justify-between border-b border-slate-700 px-3 py-2 shrink-0">
+        <div className="text-xs text-slate-400">Newton 2026 — Team {teamNumber}</div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500">
+            {loading&&lastUpdatedAt?'Refreshing…':(lastUpdatedAt?'Updated '+(relativeTime(lastUpdatedAt)||'just now'):'')}
+          </span>
+          <button onClick={refetch} disabled={loading}
+            className={"px-2 py-1 flex items-center gap-1 text-xs "+(loading?'text-slate-500':'text-slate-300 hover:text-white')}
+            aria-label="Refresh">
+            <RotateCcw className="w-3.5 h-3.5"/>
+          </button>
+          <button onClick={onClose}
+            className="text-slate-300 hover:text-white px-3 py-1 text-2xl leading-none"
+            aria-label="Close">×</button>
+        </div>
+      </div>
+      <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-3 shrink-0">
+        <div className="w-12 h-12 rounded-lg bg-slate-700 flex items-center justify-center font-black text-sm shrink-0">{teamNumber}</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-base truncate">{displayName}</p>
+          <p className="text-xs text-slate-400 truncate">
+            {pitLabel||'—'}
+            {tierInfo?' · '+tierInfo.label:''}
+            {sc&&typeof sc.epa==='number'?' · EPA '+sc.epa:''}
+          </p>
+        </div>
+        {sc&&sc.warn&&<span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded font-bold shrink-0">⚠ WARN</span>}
+      </div>
+      <TeamDetailGlossary/>
+      <TeamDetailChipStrip prefs={chipPrefs} capByName={capByName} metricByName={metricByName} observations={observations}
+        onOpenChooser={function(){setChooserOpen(true);}}/>
+      <div className="flex border-b border-slate-700 shrink-0">
+        <button onClick={function(){selectTab('pre');}}
+          className={"flex-1 py-2 text-sm font-semibold "+(tab==='pre'?'border-b-2 border-blue-500 text-white':'text-slate-400')}>
+          Pre-scouting
+        </button>
+        <button onClick={function(){selectTab('live');}}
+          className={"flex-1 py-2 text-sm font-semibold "+(tab==='live'?'border-b-2 border-blue-500 text-white':'text-slate-400')}>
+          Houston live
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        {loading&&<p className="text-sm text-slate-400">Loading…</p>}
+        {error&&<p className="text-sm text-red-400">Could not load team: {error}</p>}
+        {!loading&&!error&&tab==='pre'&&<TeamDetailPreScoutingPanel capByName={capByName} metricByName={metricByName} sc={sc}/>}
+        {!loading&&!error&&tab==='live'&&<TeamDetailLivePanel metricByName={metricByName} observations={observations}/>}
+      </div>
+      {chooserOpen&&(
+        <ChipChooserModal prefs={chipPrefs} setPrefs={setChipPrefs}
+          onClose={function(){setChooserOpen(false);}}/>
+      )}
     </div>
   );
 }
@@ -1352,7 +2097,11 @@ function TeamsTab(props){
   var search=props.search; var setSearch=props.setSearch;
   var fT=props.fT; var getNote=props.getNote; var setNote=props.setNote;
   var hasTiers=!!event.tiers;
+  var isNewton=event.id==='newton';
   var tierSt=useState('all'); var tier=tierSt[0]; var setTier=tierSt[1];
+  var openTeamSt=useState(null); var openTeam=openTeamSt[0]; var setOpenTeam=openTeamSt[1];
+  var refresher=useNewtonRefresher(NEWTON_API_EVENT_KEY);
+  var liveSummary=useNewtonLiveSummary(isNewton?NEWTON_API_EVENT_KEY:null, refresher.nonce);
   var filtered=fT;
   if(hasTiers){
     if(tier!=='all'){
@@ -1371,6 +2120,13 @@ function TeamsTab(props){
   }
   return (
     <div className="space-y-3">
+      {isNewton&&(
+        <NewtonRefreshBar apiEventKey={NEWTON_API_EVENT_KEY}
+          lastRefreshAt={refresher.lastRefreshAt}
+          refreshing={refresher.refreshing}
+          error={refresher.error}
+          onRefresh={refresher.trigger}/>
+      )}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
         <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="Search..." className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm"/>
@@ -1393,7 +2149,9 @@ function TeamsTab(props){
         {filtered.map(function(t){
           var s=event.scout[t.n];
           return (
-            <div key={t.n} className={"rounded-xl border p-3 space-y-2 "+(t.us?'bg-green-500/10 border-green-500/50':s&&s.warn?'bg-red-900/20 border-red-500/30':'bg-slate-800/50 border-slate-700')}>
+            <div key={t.n}
+              onClick={isNewton?function(){setOpenTeam(t.n);}:undefined}
+              className={"rounded-xl border p-3 space-y-2 "+(t.us?'bg-green-500/10 border-green-500/50':s&&s.warn?'bg-red-900/20 border-red-500/30':'bg-slate-800/50 border-slate-700')+(isNewton?' cursor-pointer hover:border-slate-500':'')}>
               <div className="flex items-center gap-2">
                 <div className={"w-11 h-11 rounded-lg flex items-center justify-center font-black text-xs shrink-0 "+(t.us?'bg-green-500 text-black':s&&s.warn?'bg-red-700 text-white':'bg-slate-700 text-white')}>{t.n}</div>
                 <div className="flex-1 min-w-0">
@@ -1404,6 +2162,14 @@ function TeamsTab(props){
                     {hasTiers&&<NewtonTierBadge t={t}/>}
                   </div>
                   <p className="text-xs text-slate-400">{t.loc}{t.pit?' | Pit '+t.pit:''}</p>
+                  {isNewton&&(function(){
+                    var ls=liveSummary[String(t.n)];
+                    if(ls&&ls.obsCount>0){
+                      var rel=relativeTime(ls.lastObservedAt);
+                      return <p className="text-xs text-blue-400/80">Live: {ls.obsCount} obs{rel?' · '+rel:''}</p>;
+                    }
+                    return <p className="text-xs text-slate-500">Pre-Champs only</p>;
+                  })()}
                   {!hasTiers&&s&&<div className="flex items-center gap-1 mt-0.5">
                     {[0,1,2,3].map(function(i){return <Star key={i} className={"w-3 h-3 "+(i<s.stars?'text-yellow-400 fill-yellow-400':'text-slate-600')}/>;}) }
                     {s.climb!=='None'&&<span className="text-xs text-purple-400 ml-1">{s.climb}</span>}
@@ -1420,6 +2186,7 @@ function TeamsTab(props){
               )}
               {hasTiers&&(
                 <textarea value={getNote(t.n)} onChange={function(e){setNote(t.n,e.target.value);}}
+                  onClick={function(e){e.stopPropagation();}}
                   placeholder="Our notes..."
                   className="w-full bg-slate-900 border border-slate-600 rounded px-2 py-1.5 text-xs h-14 resize-none"/>
               )}
@@ -1427,6 +2194,11 @@ function TeamsTab(props){
           );
         })}
       </div>
+      {isNewton&&openTeam!==null&&(
+        <TeamDetailModal teamNumber={openTeam} apiEventKey={NEWTON_API_EVENT_KEY}
+          refreshNonce={refresher.nonce}
+          onClose={function(){setOpenTeam(null);}}/>
+      )}
     </div>
   );
 }
@@ -1491,6 +2263,7 @@ function App(){
 
   const [tab,setTab]=useState('overview');
   const [match,setMatch]=useState(null);
+  const [openStrategyTeam,setOpenStrategyTeam]=useState(null);
   const [eventMatches,setEventMatches]=useState([]);
   const [matchesLoading,setMatchesLoading]=useState(false);
   const [matchesError,setMatchesError]=useState('');
@@ -1508,7 +2281,7 @@ function App(){
     try{localStorage.setItem('frc-v12-newton',JSON.stringify(allData.newton));}catch{}
   },[allData]);
   // Reset cross-event state when event changes (different match list / day list).
-  useEffect(()=>{setMatch(null);setDayF('all');setSearch('');setEventMatches([]);setMatchesError('');},[eventId]);
+  useEffect(()=>{setMatch(null);setDayF('all');setSearch('');setEventMatches([]);setMatchesError('');setOpenStrategyTeam(null);},[eventId]);
 
   const currentEvent=EVENTS[eventId];
   const strats=allData[eventId].strats;
@@ -1744,12 +2517,6 @@ function App(){
 
         {tab==='schedule'&&(
           <div className="space-y-3">
-            {currentEvent.scheduleIsPlaceholder&&(
-              <div className="bg-amber-500/10 border border-amber-500/40 rounded-lg p-2 flex items-center gap-2">
-                <span className="text-xs bg-amber-500/30 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold">PLACEHOLDER</span>
-                <span className="text-xs text-slate-300">Real assignments drop at event check-in.</span>
-              </div>
-            )}
             <div className="flex gap-1 flex-wrap">
               {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
             </div>
@@ -1812,20 +2579,41 @@ function App(){
                       var oppT=match.our==='red'?match.blue:match.red;
                       var ourCol=match.our==='red'?'text-red-400':'text-blue-400';
                       var oppCol=match.our==='red'?'text-blue-400':'text-red-400';
+                      var oppAllianceColor=match.our==='red'?'blue':match.our==='blue'?'red':null;
+                      var clickable=eventId==='newton';
+                      function openTeamFromStrategy(tn){ if(clickable&&tn&&tn!==0) setOpenStrategyTeam(tn); }
                       function MiniScout(props){
-                        var tn=props.tn; var col=props.col;
+                        var tn=props.tn; var col=props.col; var allianceColor=props.allianceColor;
                         if(!tn||tn===0)return null;
                         var s=currentEvent.scout[tn];
                         var teamObj=null; for(var i=0;i<currentEvent.teams.length;i++){if(currentEvent.teams[i].n===tn){teamObj=currentEvent.teams[i];break;}}
                         var name=teamObj?teamObj.name:'Team '+tn;
                         var isUs=tn===1884;
+                        var bg;
+                        if(isUs){
+                          bg='bg-green-500/10 border border-green-500/30';
+                        } else if(allianceColor==='red'){
+                          bg='bg-red-500/10 border '+(s&&s.warn?'border-red-500/60':'border-red-500/30');
+                        } else if(allianceColor==='blue'){
+                          bg='bg-blue-500/10 border '+(s&&s.warn?'border-red-500/60':'border-blue-500/30');
+                        } else {
+                          bg=(s&&s.warn?'bg-slate-700/40 border border-red-500/40':'bg-slate-700/40 border border-slate-600');
+                        }
                         return (
-                          <div className={"rounded-lg p-2 text-xs "+(isUs?'bg-green-500/10 border border-green-500/30':s&&s.warn?'bg-red-900/20 border border-red-500/30':'bg-slate-700/40 border border-slate-600')}>
+                          <div onClick={clickable?function(){openTeamFromStrategy(tn);}:undefined}
+                            className={"rounded-lg p-2 text-xs "+bg+(clickable?' cursor-pointer hover:brightness-110':'')}>
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className={"font-black "+col}>{tn}{isUs?' *':''}</span>
                               <span className="text-slate-400 truncate flex-1">{name}</span>
-                              {s&&<div className="flex shrink-0">{[0,1,2,3].map(function(i){return <Star key={i} className={"w-2.5 h-2.5 "+(i<s.stars?'text-yellow-400 fill-yellow-400':'text-slate-600')}/>;}) }</div>}
-                              {s&&s.warn&&<span className="text-red-400 font-bold shrink-0">!</span>}
+                              {s&&typeof s.stars==='number'&&(
+                                <span title="Pre-Champs scout rating (subjective)" className="flex shrink-0">
+                                  {[0,1,2,3].map(function(i){return <Star key={i} className={"w-2.5 h-2.5 "+(i<s.stars?'text-yellow-400 fill-yellow-400':'text-slate-600')}/>;})}
+                                </span>
+                              )}
+                              {s&&s.warn&&(
+                                <span title="Flagged in pre-scouting — see notes"
+                                  className="text-[10px] bg-red-600 text-white px-1 py-0.5 rounded font-bold shrink-0">⚠ ISSUES</span>
+                              )}
                             </div>
                             {s&&<p className="text-slate-300 leading-snug">{s.notes}</p>}
                             {s&&s.climb!=='None'&&<p className="text-purple-400 mt-0.5">Climb: {s.climb}</p>}
@@ -1837,9 +2625,9 @@ function App(){
                       return (
                         <div className="space-y-1">
                           <p className={"text-xs font-bold "+ourCol}>Our Alliance</p>
-                          {ourT.map(function(t,i){return <MiniScout key={i} tn={t} col={ourCol}/>;}) }
+                          {ourT.map(function(t,i){return <MiniScout key={i} tn={t} col={ourCol} allianceColor={match.our}/>;}) }
                           <p className={"text-xs font-bold mt-2 "+oppCol}>Opponents</p>
-                          {oppT.map(function(t,i){return <MiniScout key={i} tn={t} col={oppCol}/>;}) }
+                          {oppT.map(function(t,i){return <MiniScout key={i} tn={t} col={oppCol} allianceColor={oppAllianceColor}/>;}) }
                         </div>
                       );
                     })()}
@@ -2012,6 +2800,10 @@ function App(){
                 <Trophy className="w-10 h-10 mx-auto mb-3 opacity-40"/>
                 <p>Select a match above to plan strategy</p>
               </div>
+            )}
+            {eventId==='newton'&&openStrategyTeam!==null&&(
+              <TeamDetailModal teamNumber={openStrategyTeam} apiEventKey={NEWTON_API_EVENT_KEY}
+                onClose={function(){setOpenStrategyTeam(null);}}/>
             )}
           </div>
         )}
