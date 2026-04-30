@@ -22,7 +22,7 @@ export function hydrateMatchesForEvent(eventKey: string) {
       LEFT JOIN match_alliances a ON a.match_id = m.id
       LEFT JOIN match_alliance_teams mat ON mat.alliance_id = a.id
       LEFT JOIN teams t ON t.team_number = mat.team_number
-      WHERE m.event_key = ?
+      WHERE m.event_key = ? AND m.comp_level != 'pm'
       ORDER BY m.match_number ASC, a.alliance_color ASC, mat.station ASC
     `)
     .all(eventKey) as Array<{
