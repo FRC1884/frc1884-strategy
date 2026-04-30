@@ -6,6 +6,7 @@ import {
   getMatchBriefStatus,
   MatchBriefMatchNotFoundError
 } from "../integrations/claudeBrief.js";
+import { ingestPitScoutingSheet } from "../integrations/pitSheet.js";
 import { ingestNewtonPreScoutingCsv } from "../integrations/preScouting.js";
 import { ingestScoutSheet } from "../integrations/scoutSheet.js";
 import { ingestStatboticsEvent } from "../integrations/statbotics.js";
@@ -64,6 +65,21 @@ export const integrationRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(502).send({
         ok: false,
         error: error instanceof Error ? error.message : "scout_sheet_ingest_failed"
+      });
+    }
+  });
+
+  app.post<{
+    Params: { eventKey: string };
+  }>("/integrations/pit-sheet/events/:eventKey/ingest", async (request, reply) => {
+    try {
+      const result = await ingestPitScoutingSheet(request.params.eventKey);
+      return reply.code(200).send({ ok: true, result });
+    } catch (error) {
+      request.log.error(error);
+      return reply.code(502).send({
+        ok: false,
+        error: error instanceof Error ? error.message : "pit_sheet_ingest_failed"
       });
     }
   });

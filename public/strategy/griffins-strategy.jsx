@@ -1468,6 +1468,18 @@ function useNewtonRefresher(apiEventKey){
         }
       })
       .then(function(){
+        return fetch('/api/integrations/pit-sheet/events/'+apiEventKey+'/ingest',{method:'POST'})
+          .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); });
+      })
+      .then(function(res){
+        if(res.status===503&&res.body&&res.body.error_code==='tba_key_not_configured'){
+          return;
+        }
+        if(res.status<200||res.status>=300){
+          throw new Error((res.body&&res.body.error)||'pit_sheet_failed');
+        }
+      })
+      .then(function(){
         setLast(new Date().toISOString());
         setNonce(function(v){return v+1;});
         setBusy(false);
@@ -1763,6 +1775,67 @@ function ChipChooserModal(props){
   );
 }
 
+function TeamDetailPitScoutingSection(props){
+  var capByName=props.capByName||{};
+  var openSt=useState(false); var open=openSt[0]; var setOpen=openSt[1];
+
+  var fields=[
+    ['pit_changes_since_regionals', 'Changes since regionals'],
+    ['pit_cycles_per_period',       'Cycles per period'],
+    ['pit_avg_fuel_per_cycle',      'Avg fuel/cycle'],
+    ['pit_hopper_capacity',         'Hopper capacity'],
+    ['pit_auto_description',        'Auto'],
+    ['pit_climb_capability',        'Climb']
+  ];
+  var struggling=capByName.pit_struggling_with;
+  var photosRaw=capByName.pit_photo_urls;
+  var hasField=false;
+  for(var i=0;i<fields.length;i++){ if(capByName[fields[i][0]]){ hasField=true; break; } }
+  if(!hasField&&!struggling&&!photosRaw) return null;
+
+  var photoList=photosRaw?String(photosRaw).split(/,\s*/).map(function(s){return s.trim();}).filter(Boolean):[];
+
+  return (
+    <section className="rounded border border-amber-500/30 bg-amber-500/5">
+      <button onClick={function(){setOpen(!open);}}
+        className="w-full flex items-center justify-between px-3 py-2 text-left">
+        <span className="text-xs uppercase tracking-wide text-amber-300 font-semibold">Pit scouting (Houston)</span>
+        <span className="text-amber-300 text-xs">{open?'▾':'▸'}</span>
+      </button>
+      {open&&(
+        <div className="px-3 pb-3 space-y-2 text-sm">
+          {fields.map(function(f){
+            var v=capByName[f[0]];
+            if(!v) return null;
+            return (
+              <div key={f[0]}>
+                <div className="text-xs text-slate-500">{f[1]}</div>
+                <div className="text-slate-200 whitespace-pre-line leading-snug">{v}</div>
+              </div>
+            );
+          })}
+          {struggling&&(
+            <div>
+              <div className="text-xs text-orange-400 font-semibold">Struggling with</div>
+              <div className="text-orange-300 whitespace-pre-line leading-snug">{struggling}</div>
+            </div>
+          )}
+          {photoList.length>0&&(
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Photos</div>
+              <div className="flex flex-wrap gap-2">
+                {photoList.map(function(url,i){
+                  return <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline">Photo {i+1}</a>;
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TeamDetailPreScoutingPanel(props){
   var capByName=props.capByName; var metricByName=props.metricByName; var sc=props.sc;
 
@@ -1794,6 +1867,7 @@ function TeamDetailPreScoutingPanel(props){
 
   return (
     <div className="space-y-4">
+      <TeamDetailPitScoutingSection capByName={capByName}/>
       <section>
         <h3 className="text-xs uppercase tracking-wide text-slate-500 font-semibold mb-2">Capability</h3>
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
