@@ -143,7 +143,7 @@ export const apiRoutes: FastifyPluginAsync = async (app) => {
   }>("/events/:eventKey/teams/live-summary", async (request) => {
     const { eventKey } = request.params;
 
-    const rows = db
+    const obsRows = db
       .prepare(`
         SELECT mo.team_number AS team_number,
                COUNT(*) AS obs_count,
@@ -159,12 +159,162 @@ export const apiRoutes: FastifyPluginAsync = async (app) => {
       last_observed_at: string | null;
     }>;
 
-    const summary: Record<string, { obsCount: number; lastObservedAt: string | null }> = {};
-    for (const row of rows) {
-      summary[String(row.team_number)] = {
-        obsCount: row.obs_count,
-        lastObservedAt: row.last_observed_at
+    const noteRows = db
+      .prepare(`
+        SELECT mo.team_number, mo.notes
+        FROM match_observations mo
+        JOIN matches m ON m.id = mo.match_id
+        WHERE m.event_key = ? AND mo.source = 'scout-sheet'
+        ORDER BY mo.team_number ASC, mo.observed_at DESC
+      `)
+      .all(eventKey) as Array<{ team_number: number; notes: string | null }>;
+
+    const pitRows = db
+      .prepare(`
+        SELECT team_number, capability_name, capability_value
+        FROM team_capabilities
+        WHERE event_key = ?
+          AND source = 'pit-scouting'
+          AND capability_name IN (
+            'pit_climb_capability',
+            'pit_cycles_per_period',
+            'pit_avg_fuel_per_cycle',
+            'pit_changes_since_regionals',
+            'pit_struggling_with'
+          )
+      `)
+      .all(eventKey) as Array<{
+      team_number: number;
+      capability_name: string;
+      capability_value: string | null;
+    }>;
+
+    const metricRows = db
+      .prepare(`
+        SELECT team_number, metric_name, metric_value
+        FROM analytics_metrics
+        WHERE event_key = ?
+          AND metric_name IN ('tba.opr','tba.dpr','scout.avg_scoring_cycles')
+      `)
+      .all(eventKey) as Array<{
+      team_number: number;
+      metric_name: string;
+      metric_value: number | null;
+    }>;
+
+    interface TeamLiveSummary {
+      obsCount: number;
+      lastObservedAt: string | null;
+      liveObsCount: number;
+      liveLatestNotes: string[];
+      liveAvgCycles: number | null;
+      pitClaimedClimb: string | null;
+      pitClaimedBPS: string | null;
+      pitChangesSinceRegionals: string | null;
+      pitStrugglingWith: string | null;
+      tbaOpr: number | null;
+      tbaDpr: number | null;
+    }
+
+    function emptyEntry(): TeamLiveSummary {
+      return {
+        obsCount: 0,
+        lastObservedAt: null,
+        liveObsCount: 0,
+        liveLatestNotes: [],
+        liveAvgCycles: null,
+        pitClaimedClimb: null,
+        pitClaimedBPS: null,
+        pitChangesSinceRegionals: null,
+        pitStrugglingWith: null,
+        tbaOpr: null,
+        tbaDpr: null
       };
+    }
+
+    const summary: Record<string, TeamLiveSummary> = {};
+    function entry(team: number): TeamLiveSummary {
+      const k = String(team);
+      if (!summary[k]) {
+        summary[k] = emptyEntry();
+      }
+      return summary[k];
+    }
+
+    for (const row of obsRows) {
+      const e = entry(row.team_number);
+      e.obsCount = row.obs_count;
+      e.liveObsCount = row.obs_count;
+      e.lastObservedAt = row.last_observed_at;
+    }
+
+    function extractFreeText(rawNotes: string | null): string | null {
+      if (!rawNotes) {
+        return null;
+      }
+      try {
+        const parsed = JSON.parse(rawNotes) as Record<string, unknown>;
+        const other = typeof parsed.other_notes === "string" ? parsed.other_notes.trim() : "";
+        const diff = typeof parsed.difficulties === "string" ? parsed.difficulties.trim() : "";
+        if (other && diff) {
+          return `${other} · ${diff}`;
+        }
+        return other || diff || null;
+      } catch {
+        return null;
+      }
+    }
+
+    for (const row of noteRows) {
+      const e = entry(row.team_number);
+      if (e.liveLatestNotes.length >= 2) {
+        continue;
+      }
+      const text = extractFreeText(row.notes);
+      if (text) {
+        e.liveLatestNotes.push(text);
+      }
+    }
+
+    for (const row of pitRows) {
+      const e = entry(row.team_number);
+      const v = row.capability_value;
+      switch (row.capability_name) {
+        case "pit_climb_capability":
+          e.pitClaimedClimb = v;
+          break;
+        case "pit_changes_since_regionals":
+          e.pitChangesSinceRegionals = v;
+          break;
+        case "pit_struggling_with":
+          e.pitStrugglingWith = v;
+          break;
+        case "pit_cycles_per_period":
+        case "pit_avg_fuel_per_cycle":
+          if (v) {
+            e.pitClaimedBPS = e.pitClaimedBPS ? `${e.pitClaimedBPS} · ${v}` : v;
+          }
+          break;
+      }
+    }
+
+    for (const row of metricRows) {
+      const e = entry(row.team_number);
+      const v = row.metric_value;
+      if (v === null || !Number.isFinite(v)) {
+        continue;
+      }
+      switch (row.metric_name) {
+        case "tba.opr":
+          e.tbaOpr = v;
+          break;
+        case "tba.dpr":
+          e.tbaDpr = v;
+          break;
+        case "scout.avg_scoring_cycles":
+          e.liveAvgCycles = v;
+          break;
+      }
     }
 
     return { eventKey, summary };

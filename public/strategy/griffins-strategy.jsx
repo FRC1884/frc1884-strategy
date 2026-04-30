@@ -1407,6 +1407,22 @@ function useNewtonLiveSummary(apiEventKey, refreshNonce){
   return data;
 }
 
+// Same endpoint as useNewtonLiveSummary, but consumers expect the richer shape per team
+// (liveObsCount, liveLatestNotes, pit*, tbaOpr/Dpr, liveAvgCycles).
+function useNewtonTeamsLiveData(apiEventKey, refreshNonce){
+  var dataSt=useState({}); var data=dataSt[0]; var setData=dataSt[1];
+  useEffect(function(){
+    if(!apiEventKey){ setData({}); return; }
+    var cancelled=false;
+    fetch('/api/events/'+apiEventKey+'/teams/live-summary')
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(j){ if(!cancelled){ setData((j&&j.summary)||{}); } })
+      .catch(function(){ if(!cancelled){ setData({}); } });
+    return function(){ cancelled=true; };
+  },[apiEventKey, refreshNonce]);
+  return data;
+}
+
 function NewtonRefreshBar(props){
   var apiEventKey=props.apiEventKey;
   var lastRefreshAt=props.lastRefreshAt;
@@ -2474,6 +2490,7 @@ function App(){
   const [stratAll,setStratAll]=useState(false);
   const [matchesNonce,setMatchesNonce]=useState(0);
   const refresher=useNewtonRefresher(NEWTON_API_EVENT_KEY);
+  const teamsLiveData=useNewtonTeamsLiveData(eventId==='newton'?NEWTON_API_EVENT_KEY:null, refresher.nonce);
   useEffect(()=>{ if(refresher.nonce>0) setMatchesNonce(v=>v+1); },[refresher.nonce]);
 
   // Persist eventId.
@@ -2810,10 +2827,34 @@ function App(){
                       var oppAllianceColor=match.our==='red'?'blue':match.our==='blue'?'red':null;
                       var clickable=eventId==='newton';
                       function openTeamFromStrategy(tn){ if(clickable&&tn&&tn!==0) setOpenStrategyTeam(tn); }
+                      function trunc(t,n){ if(!t) return ''; var s=String(t); return s.length>n?s.slice(0,n-1)+'…':s; }
+                      function detectMismatch(live, sc){
+                        if(!live) return false;
+                        var climb=(live.pitClaimedClimb||'').toLowerCase();
+                        var notesJoined=(live.liveLatestNotes||[]).join(' ').toLowerCase();
+                        if((climb.indexOf('l3')>=0||climb.indexOf('level 3')>=0) &&
+                           (notesJoined.indexOf('no climb')>=0||notesJoined.indexOf("didn't climb")>=0||notesJoined.indexOf('climb fail')>=0)){
+                          return true;
+                        }
+                        if(sc&&typeof sc.epa==='number'&&sc.epa>=150 &&
+                           typeof live.tbaOpr==='number'&&live.tbaOpr>0&&live.tbaOpr<50){
+                          return true;
+                        }
+                        var bpsRaw=live.pitClaimedBPS||'';
+                        var bpsMatch=/(\d+(?:\.\d+)?)/.exec(bpsRaw);
+                        var bpsNum=bpsMatch?Number(bpsMatch[1]):null;
+                        if(bpsNum!==null&&bpsNum>=20 &&
+                           (live.liveObsCount||0)>=2 &&
+                           typeof live.liveAvgCycles==='number'&&live.liveAvgCycles<5){
+                          return true;
+                        }
+                        return false;
+                      }
                       function MiniScout(props){
                         var tn=props.tn; var col=props.col; var allianceColor=props.allianceColor;
                         if(!tn||tn===0)return null;
                         var s=currentEvent.scout[tn];
+                        var live=teamsLiveData[String(tn)]||null;
                         var teamObj=null; for(var i=0;i<currentEvent.teams.length;i++){if(currentEvent.teams[i].n===tn){teamObj=currentEvent.teams[i];break;}}
                         var name=teamObj?teamObj.name:'Team '+tn;
                         var isUs=tn===1884;
@@ -2827,10 +2868,17 @@ function App(){
                         } else {
                           bg=(s&&s.warn?'bg-slate-700/40 border border-red-500/40':'bg-slate-700/40 border border-slate-600');
                         }
+                        var hasPit=live&&(live.pitChangesSinceRegionals||live.pitClaimedClimb||live.pitClaimedBPS||live.pitStrugglingWith);
+                        var hasLive=live&&((live.liveObsCount||0)>0 || hasPit || (typeof live.tbaOpr==='number'&&live.tbaOpr>0));
+                        var mismatch=hasLive?detectMismatch(live, s):false;
                         return (
                           <div onClick={clickable?function(){openTeamFromStrategy(tn);}:undefined}
-                            className={"rounded-lg p-2 text-xs "+bg+(clickable?' cursor-pointer hover:brightness-110':'')}>
-                            <div className="flex items-center gap-2 mb-0.5">
+                            className={"rounded-lg p-2 text-xs relative "+bg+(clickable?' cursor-pointer hover:brightness-110':'')}>
+                            {mismatch&&(
+                              <span title="Pit claim doesn't match live performance — check brief"
+                                className="absolute top-1 right-1 text-[10px] bg-red-600 text-white px-1 py-0.5 rounded font-bold shrink-0">🚩 CHECK CLAIMS</span>
+                            )}
+                            <div className="flex items-center gap-2 mb-0.5 pr-20">
                               <span className={"font-black "+col}>{tn}{isUs?' *':''}</span>
                               <span className="text-slate-400 truncate flex-1">{name}</span>
                               {s&&typeof s.stars==='number'&&(
@@ -2843,10 +2891,22 @@ function App(){
                                   className="text-[10px] bg-red-600 text-white px-1 py-0.5 rounded font-bold shrink-0">⚠ ISSUES</span>
                               )}
                             </div>
-                            {s&&<p className="text-slate-300 leading-snug">{s.notes}</p>}
-                            {s&&s.climb!=='None'&&<p className="text-purple-400 mt-0.5">Climb: {s.climb}</p>}
-                            {s&&s.avgFuel>0&&<p className="text-green-400">~{s.avgFuel*5} fuel/cycle</p>}
-                            {!s&&!isUs&&<p className="text-slate-500 italic">No data</p>}
+                            {hasLive&&(
+                              <div className="mt-1 mb-1 pl-2 py-1 bg-green-500/5 border-l-2 border-green-500/50 space-y-0.5">
+                                <p className="text-[10px] uppercase tracking-wide text-green-400 font-semibold">Houston live</p>
+                                {live.pitChangesSinceRegionals&&<p className="text-slate-200 leading-snug">🔧 Changes: {trunc(live.pitChangesSinceRegionals,80)}</p>}
+                                {(live.liveObsCount||0)>0&&<p className="text-slate-200 leading-snug">⚡ {live.liveObsCount} obs{live.liveLatestNotes&&live.liveLatestNotes[0]?' · last "'+trunc(live.liveLatestNotes[0],60)+'"':''}</p>}
+                                {typeof live.tbaOpr==='number'&&live.tbaOpr>0&&<p className="text-slate-200 leading-snug">📊 OPR {live.tbaOpr.toFixed(0)}{typeof live.tbaDpr==='number'?' · DPR '+live.tbaDpr.toFixed(0):''}</p>}
+                                {live.pitStrugglingWith&&<p className="text-orange-300 leading-snug">⚠️ Struggles: {trunc(live.pitStrugglingWith,80)}</p>}
+                              </div>
+                            )}
+                            <div className={hasLive?'opacity-60':''}>
+                              {hasLive&&<p className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">Pre-Champs · may be outdated</p>}
+                              {s&&<p className="text-slate-300 leading-snug">{s.notes}</p>}
+                              {s&&s.climb!=='None'&&<p className="text-purple-400 mt-0.5">Climb: {s.climb}</p>}
+                              {s&&s.avgFuel>0&&<p className="text-green-400">~{s.avgFuel*5} fuel/cycle</p>}
+                              {!s&&!isUs&&!hasLive&&<p className="text-slate-500 italic">No data</p>}
+                            </div>
                           </div>
                         );
                       }
