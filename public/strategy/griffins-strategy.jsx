@@ -2274,6 +2274,8 @@ function App(){
   const [dayF,setDayF]=useState('all');
   const [ruleF,setRuleF]=useState('all');
   const [copied,setCopied]=useState(false);
+  const [onlyOurs,setOnlyOurs]=useState(true);
+  const [stratAll,setStratAll]=useState(false);
 
   // Persist eventId.
   useEffect(()=>{try{localStorage.setItem('frc-event',eventId);}catch{}},[eventId]);
@@ -2417,7 +2419,7 @@ function App(){
 
   const days=['all',...Array.from(new Set(scheduleMatches.map(m=>m.day)))];
   const cats=['all',...new Set(currentEvent.rules.map(r=>r.cat))];
-  const fM=scheduleMatches.filter(m=>dayF==='all'||m.day===dayF);
+  const fM=scheduleMatches.filter(m=>(dayF==='all'||m.day===dayF)&&(!onlyOurs||m.red.includes(1884)||m.blue.includes(1884)));
   const fR=ruleF==='all'?currentEvent.rules:currentEvent.rules.filter(r=>r.cat===ruleF);
   const fT=currentEvent.teams.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.n.toString().includes(search));
   const TABS=[{id:'overview',L:'Overview',I:Book},{id:'schedule',L:'Schedule',I:Calendar},{id:'strategy',L:'Strategy',I:Trophy},{id:'freestrat',L:'Free Strat',I:Pencil},{id:'scoring',L:'Scoring',I:CircleDot},{id:'rpcalc',L:'RP Calc',I:Calculator},{id:'pitmap',L:'Pit Map',I:MapPin},{id:'teams',L:'Teams',I:Users},{id:'rules',L:'Rules',I:AlertTriangle}];
@@ -2526,8 +2528,13 @@ function App(){
         {tab==='schedule'&&(
           <div className="space-y-3">
             <div className="flex gap-1 flex-wrap">
-              {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
+              <button onClick={()=>setOnlyOurs(v=>!v)} className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${onlyOurs?'bg-green-500 text-white':'bg-slate-700'}`}><Star className="w-3 h-3"/>Our matches</button>
             </div>
+            {!onlyOurs&&(
+              <div className="flex gap-1 flex-wrap">
+                {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
+              </div>
+            )}
             {matchesLoading&&<div className="text-xs text-slate-400">Loading matches...</div>}
             {!matchesLoading&&matchesError&&<div className="text-xs text-red-400">{matchesError}</div>}
             <div className="space-y-2">
@@ -2568,7 +2575,8 @@ function App(){
               </button>
             </div>
             <div className="flex flex-wrap gap-1">
-              {scheduleMatches.filter(m=>m.phase!=='practice').map(m=>(<button key={m.matchKey||('Q'+m.match)} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>{m.displayLabel||('Q'+m.match)}</button>))}
+              <button onClick={()=>setStratAll(v=>!v)} className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${stratAll?'bg-green-500 text-white':'bg-slate-700'}`}><Star className="w-3 h-3"/>All matches</button>
+              {scheduleMatches.filter(m=>m.phase!=='practice'&&(stratAll||m.red.includes(1884)||m.blue.includes(1884))).map(m=>(<button key={m.matchKey||('Q'+m.match)} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>{m.displayLabel||('Q'+m.match)}</button>))}
             </div>
 
             {match?(
