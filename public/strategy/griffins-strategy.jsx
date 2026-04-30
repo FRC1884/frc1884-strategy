@@ -2528,13 +2528,11 @@ function App(){
         {tab==='schedule'&&(
           <div className="space-y-3">
             <div className="flex gap-1 flex-wrap">
-              <button onClick={()=>setOnlyOurs(v=>!v)} className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${onlyOurs?'bg-green-500 text-white':'bg-slate-700'}`}><Star className="w-3 h-3"/>Our matches</button>
+              <button onClick={()=>setOnlyOurs(v=>{ if(!v) setDayF('all'); return !v; })} className={`px-2 py-1 rounded text-xs flex items-center gap-1 ${onlyOurs?'bg-green-500 text-white':'bg-slate-700'}`}><Star className="w-3 h-3"/>Our matches</button>
             </div>
-            {!onlyOurs&&(
-              <div className="flex gap-1 flex-wrap">
-                {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
-              </div>
-            )}
+            <div className="flex gap-1 flex-wrap">
+              {days.map(d=><button key={d} onClick={()=>setDayF(d)} className={`px-2 py-1 rounded text-xs ${dayF===d?'bg-green-500 text-white':'bg-slate-700'}`}>{d==='all'?'All':d}</button>)}
+            </div>
             {matchesLoading&&<div className="text-xs text-slate-400">Loading matches...</div>}
             {!matchesLoading&&matchesError&&<div className="text-xs text-red-400">{matchesError}</div>}
             <div className="space-y-2">
