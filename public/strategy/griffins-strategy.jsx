@@ -1,5 +1,5 @@
 const { useState, useEffect, useRef, useCallback } = React;
-const { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star, Settings } = LucideReact;
+const { Search, Users, Trophy, Calendar, Book, AlertTriangle, Clock, Award, Share2, Check, RotateCcw, RefreshCw, CircleDot, ArrowUp, Pencil, Eraser, Trash2, MapPin, Calculator, Star, Settings } = LucideReact;
 
 const MATCHES = [
   { match:5,  day:"Sat 3/14", time:"9:26 AM",  red:[9218,10343,9199], blue:[1156,7565,1884],    our:'blue', stn:3 },
@@ -2236,6 +2236,123 @@ function EventSwitcher(props){
   );
 }
 
+function relTimeFromIso(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d.getTime())) return '';
+  const ms=Date.now()-d.getTime();
+  const m=Math.round(ms/60000);
+  if(m<1) return 'just now';
+  if(m<60) return m+'m ago';
+  const h=Math.round(m/60);
+  if(h<24) return h+'h ago';
+  const days=Math.round(h/24);
+  return days+'d ago';
+}
+
+function renderInlineMd(text){
+  const out=[]; const re=/\*\*(.+?)\*\*/g; let last=0; let m;
+  while((m=re.exec(text))!==null){
+    if(m.index>last) out.push(text.slice(last,m.index));
+    out.push(<strong key={out.length} className="text-white">{m[1]}</strong>);
+    last=m.index+m[0].length;
+  }
+  if(last<text.length) out.push(text.slice(last));
+  return out;
+}
+
+function MarkdownView(props){
+  const md=props.md||'';
+  const lines=md.split('\n');
+  const out=[]; let bullets=[]; let para=[];
+  function flushPara(){ if(para.length){ out.push(<p key={'p'+out.length} className="mb-2 text-slate-200">{renderInlineMd(para.join(' '))}</p>); para=[]; } }
+  function flushBullets(){ if(bullets.length){ out.push(<ul key={'u'+out.length} className="list-disc pl-5 space-y-1 mb-2 text-slate-200">{bullets.map(function(b,i){return <li key={i}>{renderInlineMd(b)}</li>;})}</ul>); bullets=[]; } }
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i].trim();
+    if(line.startsWith('## ')){ flushPara(); flushBullets(); out.push(<h3 key={'h'+out.length} className="font-bold text-green-400 mb-1 mt-2">{line.slice(3)}</h3>); }
+    else if(line.startsWith('- ')){ flushPara(); bullets.push(line.slice(2)); }
+    else if(line===''){ flushPara(); flushBullets(); }
+    else { flushBullets(); para.push(line); }
+  }
+  flushPara(); flushBullets();
+  return <div className="text-xs leading-relaxed">{out}</div>;
+}
+
+function MatchBrief(props){
+  const match=props.match; const eventKey=props.eventKey;
+  const [brief,setBrief]=useState(null);
+  const [view,setView]=useState('strategist');
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState(null);
+  const matchKey=match&&match.matchKey?match.matchKey:null;
+  const inFlightRef=useRef(false);
+
+  const generate=useCallback(function(){
+    if(!matchKey||!eventKey) return;
+    if(inFlightRef.current) return;
+    inFlightRef.current=true;
+    setLoading(true); setError(null);
+    fetch('/api/coach/match-brief/'+encodeURIComponent(eventKey)+'/'+encodeURIComponent(matchKey)+'/generate',{method:'POST'})
+      .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+      .then(function(res){
+        if(res.status===200&&res.body&&res.body.brief){ setBrief(res.body.brief); setError(null); }
+        else if(res.status===503){ setError('Claude brief unavailable - API key not configured.'); }
+        else { setError("Couldn't generate brief - try Refresh."); }
+      })
+      .catch(function(){ setError("Couldn't generate brief - try Refresh."); })
+      .finally(function(){ inFlightRef.current=false; setLoading(false); });
+  },[matchKey,eventKey]);
+
+  useEffect(function(){
+    if(!matchKey||!eventKey) return;
+    let alive=true;
+    setBrief(null); setError(null); setView('strategist');
+    fetch('/api/coach/match-brief/'+encodeURIComponent(eventKey)+'/'+encodeURIComponent(matchKey))
+      .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); })
+      .then(function(res){
+        if(!alive) return;
+        if(res.status!==200||!res.body||!res.body.brief) return;
+        const b=res.body.brief;
+        if(b.staleness==='missing'){ generate(); }
+        else { setBrief(b); }
+      })
+      .catch(function(){});
+    return function(){ alive=false; };
+  },[matchKey,eventKey,generate]);
+
+  if(!matchKey||!eventKey) return null;
+
+  const hasContent=brief&&(brief.strategist||brief.driver);
+  const active=view==='strategist'?(brief?brief.strategist:''):(brief?brief.driver:'');
+
+  return (
+    <div className="bg-slate-800/30 rounded-xl p-3 border border-purple-500/25 space-y-2">
+      <p className="text-xs italic text-amber-400">Claude suggestions for strategists. Your call is final and better.</p>
+      <div className="flex gap-1">
+        <button onClick={function(){setView('strategist');}} className={'px-2 py-1 rounded text-xs '+(view==='strategist'?'bg-green-500 text-white':'bg-slate-700 text-slate-200')}>Strategist</button>
+        <button onClick={function(){setView('driver');}} className={'px-2 py-1 rounded text-xs '+(view==='driver'?'bg-green-500 text-white':'bg-slate-700 text-slate-200')}>Driver</button>
+      </div>
+      <div className="min-h-[3rem]">
+        {loading?(
+          <div className="flex items-center gap-2 text-xs text-slate-400"><RefreshCw className="w-3 h-3 animate-spin"/>Claude is thinking...</div>
+        ):error?(
+          <div className="text-xs text-red-400">{error}</div>
+        ):hasContent?(
+          <MarkdownView md={active||'(empty section)'}/>
+        ):(
+          <div className="text-xs text-slate-500">No brief yet.</div>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-slate-700">
+        <button onClick={generate} disabled={loading} className="flex items-center gap-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded text-xs">
+          <RefreshCw className={'w-3 h-3 '+(loading?'animate-spin':'')}/>Refresh
+        </button>
+        {brief&&brief.generatedAt&&<span className="text-xs text-slate-400">Generated {relTimeFromIso(brief.generatedAt)}</span>}
+        {brief&&brief.staleness==='stale'&&<span className="text-xs bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">New data - refresh available</span>}
+      </div>
+    </div>
+  );
+}
+
 function App(){
   // eventId persisted under 'frc-event'; default 'newton' on first load.
   const [eventId,setEventId]=useState(()=>{
@@ -2651,6 +2768,8 @@ function App(){
                     })()}
                   </div>
                 </div>
+
+                <MatchBrief match={match} eventKey={currentEvent.apiEventKey}/>
 
                 {/* AUTO MAP */}
                 <div className="bg-slate-800/30 rounded-xl p-3 border border-amber-500/25 space-y-3">

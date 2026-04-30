@@ -165,6 +165,17 @@ export function bootstrapDatabase(db: Database.Database): void {
       FOREIGN KEY (team_number) REFERENCES teams(team_number) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS match_briefs (
+      match_key TEXT PRIMARY KEY,
+      event_key TEXT NOT NULL,
+      strategist_md TEXT NOT NULL,
+      driver_md TEXT NOT NULL,
+      data_hash TEXT NOT NULL,
+      model TEXT NOT NULL,
+      generated_at TEXT NOT NULL,
+      FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_team_capabilities_event_team
       ON team_capabilities(event_key, team_number);
 

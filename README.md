@@ -41,6 +41,13 @@ The app serves:
 - `Statbotics` should be added as an upstream ingestion source, not queried directly from the browser.
 - The migration path is incremental: keep the current UI working, add server-backed routes, then switch frontend tabs one at a time.
 
+## Environment variables
+
+Optional integrations are gated by env vars. Server boots without them; routes that depend on a key return `503` with `error_code` until the key is set.
+
+- `TBA_API_KEY` — The Blue Alliance v3 API key, used by `/api/integrations/tba/...` ingest routes.
+- `ANTHROPIC_API_KEY` — Anthropic API key, used by `/api/coach/match-brief/.../generate` to produce per-match Claude tactical briefs (Strategist + Driver views, with prompt caching). Set on the systemd unit (`Environment=ANTHROPIC_API_KEY=...`) and restart the service to enable.
+
 ## Production
 
 Deployment assets for `jpclawhq` live in:

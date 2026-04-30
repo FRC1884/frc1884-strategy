@@ -1,5 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
 
+import {
+  ClaudeCredentialsMissingError,
+  generateMatchBrief,
+  getMatchBriefStatus,
+  MatchBriefMatchNotFoundError
+} from "../integrations/claudeBrief.js";
 import { ingestNewtonPreScoutingCsv } from "../integrations/preScouting.js";
 import { ingestScoutSheet } from "../integrations/scoutSheet.js";
 import { ingestStatboticsEvent } from "../integrations/statbotics.js";
@@ -107,6 +113,53 @@ export const integrationRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(502).send({
         ok: false,
         error: error instanceof Error ? error.message : "tba_oprs_ingest_failed"
+      });
+    }
+  });
+
+  app.get<{
+    Params: { eventKey: string; matchKey: string };
+  }>("/coach/match-brief/:eventKey/:matchKey", async (request, reply) => {
+    try {
+      const brief = getMatchBriefStatus(request.params.eventKey, request.params.matchKey);
+      return reply.code(200).send({ ok: true, brief });
+    } catch (error) {
+      if (error instanceof MatchBriefMatchNotFoundError) {
+        return reply.code(404).send({ ok: false, error: error.message });
+      }
+      request.log.error(error);
+      return reply.code(500).send({
+        ok: false,
+        error: error instanceof Error ? error.message : "match_brief_status_failed"
+      });
+    }
+  });
+
+  app.post<{
+    Params: { eventKey: string; matchKey: string };
+  }>("/coach/match-brief/:eventKey/:matchKey/generate", async (request, reply) => {
+    try {
+      const brief = await generateMatchBrief(
+        request.params.eventKey,
+        request.params.matchKey,
+        request.log
+      );
+      return reply.code(200).send({ ok: true, brief });
+    } catch (error) {
+      if (error instanceof ClaudeCredentialsMissingError) {
+        return reply.code(503).send({
+          ok: false,
+          error_code: "claude_key_not_configured",
+          error: error.message
+        });
+      }
+      if (error instanceof MatchBriefMatchNotFoundError) {
+        return reply.code(404).send({ ok: false, error: error.message });
+      }
+      request.log.error(error);
+      return reply.code(502).send({
+        ok: false,
+        error: error instanceof Error ? error.message : "match_brief_generate_failed"
       });
     }
   });
