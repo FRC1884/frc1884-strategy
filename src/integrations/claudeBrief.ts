@@ -82,7 +82,24 @@ Tier system used in scout data:
 
 Capability fields you may see per team: drivetrain, fuel_acquisition, fuel_passing, fuel_scoring_position, hopper_capacity, shooter_type, trench_bump (can it cross trench/bump), endgame_climb (None/L1/L2/L3), bps (balls per second), auto_climb. Plus free-text comments from scouts.
 
-Pre-scouting data is from regional events earlier in 2026 and may be outdated. Houston live observations (where present) are more recent. Weight live data more heavily when both exist.`;
+DATA SOURCE HIERARCHY — weight in this order (most reliable first):
+
+1. HOUSTON LIVE MATCH OBSERVATIONS (source='scout-sheet'): What the robot actually does on the field at this event. THIS IS GROUND TRUTH. When this data exists for a team, it overrides everything else. If a team claims 30 BPS in pit scouting but live observations show them scoring 8 cycles total in 5 matches, trust the observations.
+
+2. TBA OPR/DPR (metric_name='tba.opr', 'tba.dpr'): Statistical contribution computed from real match results at this event. Becomes meaningful after ~30 quals played. Pre-30 it's noisy.
+
+3. PIT SCOUTING (source='pit-scouting'): Interview data captured at Houston — what TEAMS CLAIM about their own robot. UNRELIABLE in isolation. Teams routinely:
+   - Over-promise capabilities ("we can climb L3 every match" when they actually do it 30% of the time)
+   - Quote their best-case BPS rather than their match average
+   - Describe an aspirational auto routine they've never reliably executed
+   - Hide weaknesses or downplay struggles
+   PIT SCOUTING IS USEFUL FOR: detecting recent CHANGES ("we removed the climber and added bigger hopper" — that's actionable signal that pre-scouting cannot capture), photo-verifying drivetrain/mechanism type, capturing self-reported struggles (the "struggling with" field is more honest than positive claims because teams rarely fabricate problems). Pit scouting is more current than pre-scouting because it's captured at this event.
+
+4. PRE-SCOUTING (source='pre-scouting'): EPA and capabilities aggregated from teams' regional events earlier in 2026. Stale — robots evolve significantly between regionals and Champs (rebuilds, mechanism swaps, driver changes). Treat as "starting hypothesis," not fact. Override with anything more recent.
+
+WHEN THE SOURCES DISAGREE: Default to live observations. If pit scouting claims a capability that no live observation confirms, treat the capability as UNVERIFIED and flag it in the Strategist "Key risk" bullet. Example: "Key risk: 9128 claims 25 BPS in pit scouting but live data shows ~8 BPS — if they actually hit their claimed rate, our defensive plan needs adjustment."
+
+When ONLY pit scouting exists for a team (no live match yet), use it but caveat in the brief: "[per pit interview, unverified]". When ONLY pre-scouting exists, caveat: "[from regionals, may be outdated]".`;
 
 interface MatchAllianceTeam {
   alliance: string;
