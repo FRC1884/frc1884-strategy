@@ -55,6 +55,41 @@ function parseTimestamp(raw: string, fallback: string): string {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : fallback;
 }
 
+const NEWTON_PRACTICE_DATE = "2026-04-29";
+const HOUSTON_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Chicago",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+
+function parseMatchNumber(
+  rawMatch: string,
+  rawTimestamp: string
+): { phase: "practice" | "qm"; number: number } | null {
+  const trimmed = (rawMatch ?? "").trim();
+  if (!trimmed) {
+    return null;
+  }
+  const explicit = /^p(?:ractice)?\s*(\d+)$/i.exec(trimmed);
+  if (explicit) {
+    const n = Number(explicit[1]);
+    return Number.isInteger(n) && n > 0 ? { phase: "practice", number: n } : null;
+  }
+  const bare = parsePositiveInt(trimmed);
+  if (bare === null) {
+    return null;
+  }
+  const ms = Date.parse(rawTimestamp);
+  if (Number.isFinite(ms)) {
+    const houstonDate = HOUSTON_DATE_FORMATTER.format(new Date(ms));
+    if (houstonDate === NEWTON_PRACTICE_DATE) {
+      return { phase: "practice", number: bare };
+    }
+  }
+  return { phase: "qm", number: bare };
+}
+
 function rowToNotes(row: string[]): string {
   const payload: Record<string, string | number> = {};
   for (const [key, idx] of Object.entries(COL)) {
@@ -89,7 +124,9 @@ export async function ingestScoutSheet(eventKey = "2026new"): Promise<ScoutSheet
   const rows = parseCsv(csvText);
 
   const dataRows = rows.filter(
-    (r) => parsePositiveInt(cell(r, COL.team_number)) !== null && parsePositiveInt(cell(r, COL.match_number)) !== null
+    (r) =>
+      parsePositiveInt(cell(r, COL.team_number)) !== null &&
+      parseMatchNumber(cell(r, COL.match_number), cell(r, COL.timestamp)) !== null
   );
   const totalNonHeaderRows = Math.max(0, rows.length - 1);
   const skippedRowCount = Math.max(0, totalNonHeaderRows - dataRows.length);
@@ -98,7 +135,7 @@ export async function ingestScoutSheet(eventKey = "2026new"): Promise<ScoutSheet
   let metricCount = 0;
   let snapshotCount = 0;
   const teamSet = new Set<number>();
-  const matchSet = new Set<number>();
+  const matchSet = new Set<string>();
 
   type AggBucket = {
     obsCount: number;
@@ -150,7 +187,7 @@ export async function ingestScoutSheet(eventKey = "2026new"): Promise<ScoutSheet
     `);
     const insertStubMatch = db.prepare(`
       INSERT OR IGNORE INTO matches (match_key, event_key, comp_level, match_number, source)
-      VALUES (?, ?, 'qm', ?, 'scout-pending')
+      VALUES (?, ?, ?, ?, 'scout-pending')
     `);
     const selectMatchId = db.prepare(`SELECT id FROM matches WHERE match_key = ?`);
     const insertObservation = db.prepare(`
@@ -164,12 +201,17 @@ export async function ingestScoutSheet(eventKey = "2026new"): Promise<ScoutSheet
 
     for (const row of dataRows) {
       const teamNumber = parsePositiveInt(cell(row, COL.team_number)) as number;
-      const matchNumber = parsePositiveInt(cell(row, COL.match_number)) as number;
-      const matchKey = `${eventKey}_qm${matchNumber}`;
+      const parsedMatch = parseMatchNumber(cell(row, COL.match_number), cell(row, COL.timestamp)) as {
+        phase: "practice" | "qm";
+        number: number;
+      };
+      const matchNumber = parsedMatch.number;
+      const compLevel = parsedMatch.phase === "practice" ? "pm" : "qm";
+      const matchKey = `${eventKey}_${compLevel}${matchNumber}`;
 
       insertTeam.run(teamNumber, `Team ${teamNumber}`);
       insertEventTeam.run(eventKey, teamNumber);
-      insertStubMatch.run(matchKey, eventKey, matchNumber);
+      insertStubMatch.run(matchKey, eventKey, compLevel, matchNumber);
 
       const matchRow = selectMatchId.get(matchKey) as { id: number } | undefined;
       if (!matchRow) {
@@ -192,7 +234,7 @@ export async function ingestScoutSheet(eventKey = "2026new"): Promise<ScoutSheet
 
       observationCount += 1;
       teamSet.add(teamNumber);
-      matchSet.add(matchNumber);
+      matchSet.add(matchKey);
 
       const b = bucket(teamNumber);
       b.obsCount += 1;
