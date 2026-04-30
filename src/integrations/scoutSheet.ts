@@ -63,6 +63,14 @@ const HOUSTON_DATE_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit"
 });
 
+// Accepted match-number formats (case-insensitive, surrounding whitespace ok):
+//   Practice: "P5", "p5", "P 5", "Practice 5", "practice 5"        -> phase=practice
+//   Quals:    "Q5", "q5", "Q 5", "Qual 5", "Quals 5",
+//             "Qualification 5", "Qualifications 5"                 -> phase=qm
+//   Bare int: "5"  -> phase decided by Houston-local date of timestamp
+//             (Wed 2026-04-29 -> practice, otherwise qm). This catches
+//             stragglers entering Wed practice rows late on Thu+.
+//   Anything else -> null (row skipped).
 function parseMatchNumber(
   rawMatch: string,
   rawTimestamp: string
@@ -71,10 +79,15 @@ function parseMatchNumber(
   if (!trimmed) {
     return null;
   }
-  const explicit = /^p(?:ractice)?\s*(\d+)$/i.exec(trimmed);
-  if (explicit) {
-    const n = Number(explicit[1]);
+  const practice = /^p(?:ractice)?\s*(\d+)$/i.exec(trimmed);
+  if (practice) {
+    const n = Number(practice[1]);
     return Number.isInteger(n) && n > 0 ? { phase: "practice", number: n } : null;
+  }
+  const quals = /^q(?:ual(?:ification)?s?)?\s*(\d+)$/i.exec(trimmed);
+  if (quals) {
+    const n = Number(quals[1]);
+    return Number.isInteger(n) && n > 0 ? { phase: "qm", number: n } : null;
   }
   const bare = parsePositiveInt(trimmed);
   if (bare === null) {
