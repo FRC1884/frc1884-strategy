@@ -1456,6 +1456,18 @@ function useNewtonRefresher(apiEventKey){
         }
       })
       .then(function(){
+        return fetch('/api/integrations/tba/events/'+apiEventKey+'/ingest-matches',{method:'POST'})
+          .then(function(r){ return r.json().then(function(j){ return {status:r.status, body:j}; }); });
+      })
+      .then(function(res){
+        if(res.status===503&&res.body&&res.body.error_code==='tba_key_not_configured'){
+          return;
+        }
+        if(res.status<200||res.status>=300){
+          throw new Error((res.body&&res.body.error)||'tba_matches_failed');
+        }
+      })
+      .then(function(){
         setLast(new Date().toISOString());
         setNonce(function(v){return v+1;});
         setBusy(false);
@@ -2098,12 +2110,12 @@ function TeamsTab(props){
   var event=props.event;
   var search=props.search; var setSearch=props.setSearch;
   var fT=props.fT; var getNote=props.getNote; var setNote=props.setNote;
+  var refresher=props.refresher;
   var hasTiers=!!event.tiers;
   var isNewton=event.id==='newton';
   var tierSt=useState('all'); var tier=tierSt[0]; var setTier=tierSt[1];
   var openTeamSt=useState(null); var openTeam=openTeamSt[0]; var setOpenTeam=openTeamSt[1];
-  var refresher=useNewtonRefresher(NEWTON_API_EVENT_KEY);
-  var liveSummary=useNewtonLiveSummary(isNewton?NEWTON_API_EVENT_KEY:null, refresher.nonce);
+  var liveSummary=useNewtonLiveSummary(isNewton?NEWTON_API_EVENT_KEY:null, refresher?refresher.nonce:0);
   var filtered=fT;
   if(hasTiers){
     if(tier!=='all'){
@@ -2122,13 +2134,6 @@ function TeamsTab(props){
   }
   return (
     <div className="space-y-3">
-      {isNewton&&(
-        <NewtonRefreshBar apiEventKey={NEWTON_API_EVENT_KEY}
-          lastRefreshAt={refresher.lastRefreshAt}
-          refreshing={refresher.refreshing}
-          error={refresher.error}
-          onRefresh={refresher.trigger}/>
-      )}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
         <input value={search} onChange={function(e){setSearch(e.target.value);}} placeholder="Search..." className="w-full bg-slate-800 border border-slate-600 rounded-lg pl-9 pr-3 py-2 text-sm"/>
@@ -2393,6 +2398,9 @@ function App(){
   const [copied,setCopied]=useState(false);
   const [onlyOurs,setOnlyOurs]=useState(true);
   const [stratAll,setStratAll]=useState(false);
+  const [matchesNonce,setMatchesNonce]=useState(0);
+  const refresher=useNewtonRefresher(NEWTON_API_EVENT_KEY);
+  useEffect(()=>{ if(refresher.nonce>0) setMatchesNonce(v=>v+1); },[refresher.nonce]);
 
   // Persist eventId.
   useEffect(()=>{try{localStorage.setItem('frc-event',eventId);}catch{}},[eventId]);
@@ -2451,7 +2459,7 @@ function App(){
         if(alive) setMatchesLoading(false);
       });
     return function(){ alive = false; };
-  },[currentEvent.apiEventKey, currentEvent.apiTimeZone]);
+  },[currentEvent.apiEventKey, currentEvent.apiTimeZone, matchesNonce]);
 
   useEffect(()=>{
     if(!currentEvent.apiEventKey || eventMatches.length===0) return;
@@ -2555,6 +2563,17 @@ function App(){
           <div className="bg-green-500/20 px-2 py-1 rounded-full text-xs flex items-center gap-1"><Award className="w-3 h-3"/>1884 Griffins</div>
         </div>
       </header>
+      {eventId==='newton'&&(
+        <div className="bg-slate-900/80 border-b border-slate-700 px-3 py-2">
+          <div className="max-w-2xl mx-auto">
+            <NewtonRefreshBar apiEventKey={NEWTON_API_EVENT_KEY}
+              lastRefreshAt={refresher.lastRefreshAt}
+              refreshing={refresher.refreshing}
+              error={refresher.error}
+              onRefresh={refresher.trigger}/>
+          </div>
+        </div>
+      )}
       <nav className="bg-slate-800/50 border-b border-slate-700 overflow-x-auto">
         <div className="max-w-2xl mx-auto flex gap-1 p-1">
           {TABS.map(({id,L,I})=>(
@@ -2946,7 +2965,7 @@ function App(){
         )}
 
         {tab==='teams'&&(
-          <TeamsTab event={currentEvent} search={search} setSearch={setSearch} fT={fT} getNote={getNote} setNote={setNote}/>
+          <TeamsTab event={currentEvent} search={search} setSearch={setSearch} fT={fT} getNote={getNote} setNote={setNote} refresher={refresher}/>
         )}
 
         {tab==='rules'&&(
