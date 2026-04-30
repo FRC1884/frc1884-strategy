@@ -866,19 +866,19 @@ var NEWTON_PITCH = {
 };
 
 var NEWTON_PRACTICE_MATCHES = [
-  {match:1,  day:"Wed 4/29", time:"5:00 PM", red:[599,6352,233],   blue:[180,9450,10903]},
-  {match:2,  day:"Wed 4/29", time:"5:10 PM", red:[8046,1577,2783], blue:[7160,10935,2194]},
-  {match:3,  day:"Wed 4/29", time:"5:20 PM", red:[8373,1108,2910], blue:[9245,3256,9067]},
-  {match:4,  day:"Wed 4/29", time:"5:30 PM", red:[1833,3966,4590], blue:[948,4206,195]},
-  {match:5,  day:"Wed 4/29", time:"5:40 PM", red:[6988,11463,3276],blue:[6436,2046,148]},
-  {match:6,  day:"Wed 4/29", time:"5:50 PM", red:[9128,5216,2052], blue:[5951,2586,10553]},
-  {match:7,  day:"Wed 4/29", time:"6:00 PM", red:[4099,341,1796],  blue:[2370,2996,424]},
-  {match:8,  day:"Wed 4/29", time:"6:10 PM", red:[1540,10291,10979],blue:[2067,5948,386]},
-  {match:9,  day:"Wed 4/29", time:"6:20 PM", red:[6647,346,3044],  blue:[695,818,1902]},
-  {match:10, day:"Wed 4/29", time:"6:30 PM", red:[3354,5414,9408], blue:[868,604,4561]},
-  {match:11, day:"Wed 4/29", time:"6:40 PM", red:[3005,1807,4253], blue:[2713,9029,88]},
-  {match:12, day:"Wed 4/29", time:"6:50 PM", red:[930,1922,687],   blue:[1884,973,6036],  our:'blue', stn:1},
-  {match:13, day:"Wed 4/29", time:"7:00 PM", red:[5736,4400,9450], blue:[5549,7160,10935]}
+  {match:1,  day:"Wed 4/29", time:"5:00 PM", red:[599,6352,233],   blue:[180,9450,10903],   phase:'practice', displayLabel:'P1'},
+  {match:2,  day:"Wed 4/29", time:"5:10 PM", red:[8046,1577,2783], blue:[7160,10935,2194],  phase:'practice', displayLabel:'P2'},
+  {match:3,  day:"Wed 4/29", time:"5:20 PM", red:[8373,1108,2910], blue:[9245,3256,9067],   phase:'practice', displayLabel:'P3'},
+  {match:4,  day:"Wed 4/29", time:"5:30 PM", red:[1833,3966,4590], blue:[948,4206,195],     phase:'practice', displayLabel:'P4'},
+  {match:5,  day:"Wed 4/29", time:"5:40 PM", red:[6988,11463,3276],blue:[6436,2046,148],    phase:'practice', displayLabel:'P5'},
+  {match:6,  day:"Wed 4/29", time:"5:50 PM", red:[9128,5216,2052], blue:[5951,2586,10553],  phase:'practice', displayLabel:'P6'},
+  {match:7,  day:"Wed 4/29", time:"6:00 PM", red:[4099,341,1796],  blue:[2370,2996,424],    phase:'practice', displayLabel:'P7'},
+  {match:8,  day:"Wed 4/29", time:"6:10 PM", red:[1540,10291,10979],blue:[2067,5948,386],   phase:'practice', displayLabel:'P8'},
+  {match:9,  day:"Wed 4/29", time:"6:20 PM", red:[6647,346,3044],  blue:[695,818,1902],     phase:'practice', displayLabel:'P9'},
+  {match:10, day:"Wed 4/29", time:"6:30 PM", red:[3354,5414,9408], blue:[868,604,4561],     phase:'practice', displayLabel:'P10'},
+  {match:11, day:"Wed 4/29", time:"6:40 PM", red:[3005,1807,4253], blue:[2713,9029,88],     phase:'practice', displayLabel:'P11'},
+  {match:12, day:"Wed 4/29", time:"6:50 PM", red:[930,1922,687],   blue:[1884,973,6036],  our:'blue', stn:1, phase:'practice', displayLabel:'P12'},
+  {match:13, day:"Wed 4/29", time:"7:00 PM", red:[5736,4400,9450], blue:[5549,7160,10935],  phase:'practice', displayLabel:'P13'}
 ];
 
 // === EVENT REGISTRY ==========================================================
@@ -919,6 +919,8 @@ var EVENTS = {
     overviewBlurb: { type: 'defender' },
     rules: RULES,
     storageKey: 'frc-v12-newton',
+    apiEventKey: '2026new',
+    apiTimeZone: 'America/Chicago',
     tiers: NEWTON_TIERS,
     pitch: NEWTON_PITCH,
   },
@@ -2333,6 +2335,12 @@ function App(){
   },[currentEvent.apiEventKey, currentEvent.apiTimeZone]);
 
   useEffect(()=>{
+    if(!currentEvent.apiEventKey || eventMatches.length===0) return;
+    const firstDay = eventMatches[0].day;
+    setDayF(prev => prev==='all' ? firstDay : prev);
+  },[currentEvent.apiEventKey, eventMatches]);
+
+  useEffect(()=>{
     if(!currentEvent.apiEventKey || matchesLoading || eventMatches.length===0) return;
     let alive = true;
     fetch(`/api/events/${currentEvent.apiEventKey}/strategy-plans?scope=scheduled_match`)
@@ -2364,7 +2372,7 @@ function App(){
   },[]);
 
   const gm=m=>strats[`m${m}`]||{};
-  const scheduleMatches=eventMatches.length>0?eventMatches:currentEvent.matches;
+  const scheduleMatches=eventMatches.length>0?[...currentEvent.matches, ...eventMatches]:currentEvent.matches;
   const queuePlanSave=useCallback(function(matchNumber,nextMatchData){
     if(!currentEvent.apiEventKey) return;
     var matchObj = scheduleMatches.find(function(m){ return m.match === matchNumber; });
@@ -2524,11 +2532,15 @@ function App(){
             {!matchesLoading&&matchesError&&<div className="text-xs text-red-400">{matchesError}</div>}
             <div className="space-y-2">
               {fM.map(m=>{
-                const t=total(m.match);const has=!!strats[`m${m.match}`];
-                return(<div key={m.match} onClick={()=>{setMatch(m);setTab('strategy');}} className={`bg-slate-800/50 border rounded-lg p-2 cursor-pointer active:scale-95 transition-transform ${has?'border-green-500/60':'border-slate-700'}`}>
+                const isPractice=m.phase==='practice';
+                const t=total(m.match);
+                const has=!isPractice && !!strats[`m${m.match}`];
+                const label=m.displayLabel||('Q'+m.match);
+                const rowKey=m.matchKey||((isPractice?'P':'Q')+m.match);
+                return(<div key={rowKey} onClick={isPractice?undefined:()=>{setMatch(m);setTab('strategy');}} className={`bg-slate-800/50 border rounded-lg p-2 transition-transform ${isPractice?'opacity-70':'cursor-pointer active:scale-95'} ${has?'border-green-500/60':'border-slate-700'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-xs font-bold">Q{m.match}</span>
+                      <span className={`${isPractice?'bg-amber-500/20 text-amber-400':'bg-green-500/20 text-green-400'} px-1.5 py-0.5 rounded text-xs font-bold`}>{label}</span>
                       <span className="text-xs text-slate-400">{m.day} | {m.time}</span>
                     </div>
                     <div className="flex items-center gap-1">
@@ -2556,7 +2568,7 @@ function App(){
               </button>
             </div>
             <div className="flex flex-wrap gap-1">
-              {scheduleMatches.map(m=>(<button key={m.match} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>Q{m.match}</button>))}
+              {scheduleMatches.filter(m=>m.phase!=='practice').map(m=>(<button key={m.matchKey||('Q'+m.match)} onClick={()=>setMatch(m)} className={`px-2 py-1 rounded text-xs font-medium ${match&&match.match===m.match?'bg-green-500 text-white':strats[`m${m.match}`]?'bg-green-500/20 text-green-400 border border-green-500/40':'bg-slate-700 hover:bg-slate-600'}`}>{m.displayLabel||('Q'+m.match)}</button>))}
             </div>
 
             {match?(
