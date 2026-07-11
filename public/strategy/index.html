@@ -14,9 +14,12 @@
     <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.js"></script>
     <style>
       body { margin: 0; background: #0f172a; }
+      .home-back{position:fixed;top:10px;right:10px;z-index:9999;font:600 12px system-ui,-apple-system,sans-serif;background:#c79a2f;color:#231900;text-decoration:none;padding:6px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+      .home-back:hover{filter:brightness(1.06)}
     </style>
   </head>
   <body>
+    <a class="home-back" href="/" title="Back to griffins1884.org">← griffins1884.org</a>
     <div id="root"></div>
     <script type="text/babel" src="/strategy/griffins-strategy.jsx"></script>
     <script type="text/babel">
