@@ -186,5 +186,59 @@ export function bootstrapDatabase(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_strategy_plans_event_match ON strategy_plans(event_key, match_id);
     CREATE INDEX IF NOT EXISTS idx_external_snapshots_provider_entity ON external_snapshots(provider, entity_type, entity_key);
     CREATE INDEX IF NOT EXISTS idx_analytics_metrics_event_team ON analytics_metrics(event_key, team_number);
+
+    -- ===== Scouting-2 app (video recording, AI analysis, mandatory ratings) =====
+    CREATE TABLE IF NOT EXISTS match_recordings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_key TEXT NOT NULL,
+      match_key TEXT NOT NULL,
+      scout TEXT,
+      video_path TEXT,
+      status TEXT NOT NULL DEFAULT 'recording'
+        CHECK (status IN ('recording','uploaded','processing','done','failed')),
+      scout_note TEXT,
+      error TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_match_recordings_match ON match_recordings(event_key, match_key);
+
+    CREATE TABLE IF NOT EXISTS ai_match_analysis (
+      match_key TEXT NOT NULL,
+      team_number INTEGER NOT NULL,
+      recording_id INTEGER,
+      alliance TEXT CHECK (alliance IN ('red','blue')),
+      station INTEGER,
+      fuel_estimate REAL,
+      id_confidence TEXT CHECK (id_confidence IN ('high','medium','low')),
+      did_well TEXT,
+      did_poorly TEXT,
+      vulnerabilities TEXT,
+      summary TEXT,
+      path_json TEXT,
+      model TEXT,
+      generated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (match_key, team_number),
+      FOREIGN KEY (recording_id) REFERENCES match_recordings(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS scout_robot_ratings (
+      match_key TEXT NOT NULL,
+      team_number INTEGER NOT NULL,
+      event_key TEXT NOT NULL,
+      recording_id INTEGER,
+      scout TEXT,
+      scoring_rating TEXT NOT NULL
+        CHECK (scoring_rating IN ('exceptional','good','average','bad','no_evidence')),
+      defence_rating TEXT NOT NULL
+        CHECK (defence_rating IN ('exceptional','good','average','bad','no_evidence')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (match_key, team_number),
+      FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE,
+      FOREIGN KEY (recording_id) REFERENCES match_recordings(id) ON DELETE SET NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_scout_ratings_team ON scout_robot_ratings(event_key, team_number);
   `);
 }
