@@ -1,4 +1,0 @@
-name,username,password,role,active
-Shivan Singh,shivan,PASTE-HASH-HERE,analyst,yes
-Worked Example (password is: example-only),demo,scrypt$16384$8$1$Cwjw4AM5JsGE7oN9IBwA4w$4kC1RuF8vR5uQdJNl8Jn2FG8mm_GnWVf1GRpKx0kaHE,scout,yes
-Disabled Example,olduser,PASTE-HASH-HERE,scout,no

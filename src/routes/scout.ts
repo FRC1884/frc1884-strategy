@@ -11,7 +11,6 @@ import {
 import { isRatingValue, RATING_SCORE, type RatingValue } from "../integrations/ratings.js";
 import { buildVideoDataset } from "../integrations/matchVideoDataset.js";
 import { ingestZebraForEvent, getMatchPaths, TbaKeyMissingError } from "../integrations/zebra.js";
-import { buildTeamZebraProfile, buildPredictedMatch } from "../integrations/zebraProfiles.js";
 
 export const scoutVideoRoutes: FastifyPluginAsync = async (app) => {
   // The scout opens the app -> the one in-progress match is shown automatically.
@@ -225,23 +224,6 @@ export const scoutVideoRoutes: FastifyPluginAsync = async (app) => {
       request.log.error(error);
       return reply.code(502).send({ error: error instanceof Error ? error.message : "zebra_ingest_failed" });
     }
-  });
-
-  // Per-second average location of a team across all ingested zebra matches.
-  app.get<{ Params: { teamNumber: string } }>("/teams/:teamNumber/zebra-profile", async (request, reply) => {
-    const teamNumber = Number(request.params.teamNumber);
-    if (!Number.isInteger(teamNumber)) return reply.code(400).send({ error_code: "bad_team_number" });
-    const profile = buildTeamZebraProfile(teamNumber);
-    if (profile.matchesUsed === 0) return reply.code(404).send({ error_code: "no_zebra_data_for_team" });
-    return profile;
-  });
-
-  // Expected pathways for a match: zebra-derived average locations per robot,
-  // with explicit coverage so the UI can label synthetic fallbacks honestly.
-  app.get<{ Params: { matchKey: string } }>("/matches/:matchKey/predicted", async (request, reply) => {
-    const predicted = buildPredictedMatch(request.params.matchKey);
-    if (!predicted) return reply.code(404).send({ error_code: "match_not_found" });
-    return predicted;
   });
 
   app.get<{ Params: { matchKey: string } }>("/matches/:matchKey/paths", async (request, reply) => {

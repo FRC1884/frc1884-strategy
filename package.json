@@ -7,8 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "check": "tsc --noEmit",
-    "hash-password": "node scripts/hash-password.mjs"
+    "check": "tsc --noEmit"
   },
   "dependencies": {
     "@fastify/static": "^9.0.0",
