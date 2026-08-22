@@ -1,9 +1,13 @@
 import { db } from "../db/client.js";
 
 // Zebra MotionWorks ingest: real per-robot (x,y) field positions over time from
-// TBA, where the event has the tracking system. This is genuine ground-truth
-// movement data — no CV, no OCR, no training. Coverage is partial (only equipped
-// events) and coordinates are field feet, not video pixels.
+// TBA, where the event has the tracking system.
+//
+// HONEST COVERAGE NOTE: Zebra has been rare at events in recent seasons — most
+// events do not run it. Treat this ingest as OPPORTUNISTIC bonus data, not a
+// pillar: it 404s harmlessly per match and only fills data where it exists.
+// The field-playback view does not depend on it (it falls back to scouted
+// shift-activity), and no feature should assume Zebra data is present.
 
 const TBA_BASE_URL = "https://www.thebluealliance.com/api/v3";
 
