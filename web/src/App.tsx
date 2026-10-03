@@ -8,6 +8,7 @@ import { navigate, segments, usePath } from "./lib/router";
 import { useSession } from "./lib/session";
 import { homeFor, NAV, navFor } from "./nav";
 import { AdminPage } from "./pages/Admin";
+import { ManagerPage } from "./pages/Manager";
 import { MorePage } from "./pages/More";
 import { ScoutEntry, ScoutHome, ScoutPick } from "./pages/Scout";
 import { SignIn } from "./pages/SignIn";
@@ -42,6 +43,8 @@ function Routes({ path }: { path: string }) {
       if (rest[0] === "entry" && rest[1]) return <ScoutEntry id={rest[1]} />;
       if (rest[0] === "pick") return <ScoutPick />;
       return <ScoutHome />;
+    case "manager":
+      return <ManagerPage rest={rest} />;
     case "admin":
       return <AdminPage />;
     case "more":

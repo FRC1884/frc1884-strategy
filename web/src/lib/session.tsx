@@ -61,6 +61,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (change.entity === "session") void reload();
   }), [reload]);
 
+  useEffect(() => {
+    const listener = () => void reload();
+    window.addEventListener("hub-signed-out", listener);
+    return () => window.removeEventListener("hub-signed-out", listener);
+  }, [reload]);
+
   const value = useMemo<SessionContextValue>(
     () => ({
       loading: info === null,

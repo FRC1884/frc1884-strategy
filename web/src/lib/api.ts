@@ -27,6 +27,10 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   } catch {
     data = null;
   }
+  if (response.status === 401 && path !== "/session") {
+    // Signed out elsewhere (or by a manager): let the app show the sign-in page.
+    window.dispatchEvent(new Event("hub-signed-out"));
+  }
   if (!response.ok) {
     const code = (data as { error?: string } | null)?.error ?? `http_${response.status}`;
     throw new ApiError(response.status, code, data);

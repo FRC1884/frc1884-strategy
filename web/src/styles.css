@@ -324,3 +324,40 @@ td .chip { margin-left: 8px; }
   .entry-submit { left: 92px; bottom: 0; padding: 14px 28px 20px; }
   .entry-submit > * { max-width: 704px; margin: 0 auto; width: 100%; }
 }
+
+/* Manager */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line-strong); overflow-x: auto; }
+.tab { padding: 10px 14px; text-decoration: none; color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -1px; min-height: 44px; }
+.tab.is-active { color: var(--gold); border-bottom-color: var(--gold); }
+.stat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat { background: var(--navy-800); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 16px; min-width: 130px; display: flex; flex-direction: column; }
+.stat strong { font-family: var(--display); font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat strong small { font-size: 1.1rem; color: var(--dim); font-weight: 600; }
+.stat span { color: var(--muted); font-size: 0.88rem; margin-top: 4px; }
+.board { display: grid; gap: 14px; }
+@media (min-width: 1000px) { .board { grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); } }
+.slots { list-style: none; margin: 0; padding: 0; }
+.slot { display: grid; grid-template-columns: 64px 1fr; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.slot:last-child { border-bottom: 0; padding-bottom: 0; }
+.slot-team { font-family: var(--display); font-weight: 700; font-size: 1.35rem; text-align: center; border-radius: 8px; padding: 6px 0; color: #fff; grid-row: span 2; align-self: start; }
+.slot-red { background: #b5382f; }
+.slot-blue { background: #2c5fbb; }
+.slot-who { min-width: 0; }
+.slot-who select { min-height: 38px; padding: 4px 8px; background: var(--navy-950); border: 1px solid var(--line-strong); border-radius: var(--radius-small); max-width: 100%; }
+.slot-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.slot-open { color: var(--muted); font-size: 0.88rem; }
+@media (min-width: 620px) {
+  .slot { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .slot-team { grid-row: auto; }
+  .slot-status { justify-content: flex-end; }
+}
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 16px; margin: 0; }
+.facts dt { color: var(--dim); font-size: 0.85rem; }
+.facts dd { margin: 0; }
+.activity { list-style: none; margin: 0; padding: 0; }
+.activity li { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.activity li:last-child { border-bottom: 0; }
+.activity time { color: var(--dim); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.activity-offline, .activity-online { color: var(--dim); }
+.activity-submitted strong { color: var(--good); }
+td .chip + .chip { margin-left: 6px; }
