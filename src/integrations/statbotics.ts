@@ -221,8 +221,9 @@ export async function ingestStatboticsEvent(eventKey: string): Promise<{
     storeSnapshot("statbotics", "team_events", eventKey, teamEvents, fetchedAt);
     storeSnapshot("statbotics", "matches", eventKey, matches, fetchedAt);
 
-    db.prepare(`DELETE FROM event_teams WHERE event_key = ?`).run(eventKey);
-    db.prepare(`DELETE FROM analytics_metrics WHERE event_key = ?`).run(eventKey);
+    // Replace only this import's own figures. Scouting data and figures from
+    // other sources for the same event must survive a re-import.
+    db.prepare(`DELETE FROM analytics_metrics WHERE event_key = ? AND metric_name LIKE 'statbotics.%'`).run(eventKey);
 
     teams.forEach((team) => {
       upsertTeamFromStatbotics(team);

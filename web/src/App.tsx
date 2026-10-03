@@ -6,6 +6,7 @@ import { useLiveState } from "./lib/live";
 import { navigate, segments, usePath } from "./lib/router";
 import { useSession } from "./lib/session";
 import { homeFor, NAV, navFor } from "./nav";
+import { AdminPage } from "./pages/Admin";
 import { MorePage } from "./pages/More";
 import { SignIn } from "./pages/SignIn";
 
@@ -35,6 +36,8 @@ function Routes({ path }: { path: string }) {
   }
 
   switch (section) {
+    case "admin":
+      return <AdminPage />;
     case "more":
       return <MorePage rest={rest} />;
     default:

@@ -3,6 +3,7 @@ import { computeRp } from "@shared/games/index";
 import { Empty, Link, Page, Panel } from "../components/ui";
 import { Icon } from "../components/Icon";
 import { useSession } from "../lib/session";
+import { SchedulePage } from "./Schedule";
 
 function clock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -164,6 +165,7 @@ function Rules() {
 }
 
 const LINKS = [
+  { to: "/more/schedule", label: "Schedule", detail: "Every match, with times that follow the field" },
   { to: "/more/scoring", label: "Scoring", detail: "Points, ranking points and the match timeline" },
   { to: "/more/rp", label: "Ranking point calculator", detail: "Work out ranking points for both alliances" },
   { to: "/more/rules", label: "Rules to remember", detail: "The rules that cost matches" },
@@ -171,6 +173,8 @@ const LINKS = [
 
 export function MorePage({ rest }: { rest: string[] }) {
   switch (rest[0]) {
+    case "schedule":
+      return <SchedulePage />;
     case "scoring":
       return <Scoring />;
     case "rp":

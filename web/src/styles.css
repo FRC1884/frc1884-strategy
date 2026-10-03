@@ -216,3 +216,40 @@ th.sortable.is-sorted { color: var(--gold); }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Forms */
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
+.form-actions { display: flex; gap: 8px; align-items: end; }
+.inline-field { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+.inline-field select { min-height: 36px; padding: 4px 8px; background: var(--navy-950); border: 1px solid var(--line-strong); border-radius: var(--radius-small); }
+.check { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; cursor: pointer; }
+.check input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--gold); }
+.pill { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: transparent; color: var(--muted); cursor: pointer; font-weight: 500; }
+.pill.is-on { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+
+/* Schedule */
+.alliance { display: inline-flex; gap: 8px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.alliance-red .team { color: #ffb3ab; }
+.alliance-blue .team { color: #b4d0ff; }
+.team-ours { color: var(--gold) !important; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.row-done td { opacity: 0.62; }
+.row-next td { background: rgba(216, 173, 88, 0.08); }
+.row-next td:first-child { box-shadow: inset 3px 0 0 var(--gold); }
+td .chip { margin-left: 8px; }
+.score-red { color: #ffb3ab; }
+.score-blue { color: #b4d0ff; }
+.win { font-weight: 700; }
+
+/* Admin */
+.status-list, .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.status { display: flex; gap: 10px; align-items: baseline; }
+.status span { width: 18px; text-align: center; font-weight: 700; }
+.status-ok span { color: var(--good); }
+.status-missing { color: #ffd48a; }
+.status-missing span { color: var(--warn); }
+.steps { margin-top: 10px; font-size: 0.9rem; }
+.steps li { display: flex; gap: 10px; flex-wrap: wrap; }
+.steps strong { min-width: 150px; font-weight: 500; }
+.step-ok span { color: var(--dim); }
+.step-failed { color: #ffb3ab; }
+.nowrap { white-space: nowrap; }

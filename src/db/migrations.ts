@@ -50,6 +50,34 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    id: 2,
+    name: "hub_schedule",
+    up(db) {
+      db.exec(`
+        ALTER TABLE events ADD COLUMN timezone TEXT;
+        ALTER TABLE matches ADD COLUMN set_number INTEGER;
+        ALTER TABLE matches ADD COLUMN planned_at TEXT;
+        ALTER TABLE matches ADD COLUMN predicted_at TEXT;
+        ALTER TABLE matches ADD COLUMN actual_at TEXT;
+        ALTER TABLE matches ADD COLUMN marked_played INTEGER NOT NULL DEFAULT 0;
+        UPDATE matches SET planned_at = scheduled_at WHERE planned_at IS NULL;
+
+        CREATE TABLE event_rankings (
+          event_key TEXT NOT NULL,
+          team_number INTEGER NOT NULL,
+          rank INTEGER NOT NULL,
+          ranking_score REAL,
+          wins INTEGER,
+          losses INTEGER,
+          ties INTEGER,
+          matches_played INTEGER,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (event_key, team_number)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): number[] {

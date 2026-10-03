@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { getGame, type GameDefinition } from "@shared/games/index";
 import type { Role } from "@shared/roles";
 import { api } from "./api";
-import { connectLive, disconnectLive } from "./live";
+import { connectLive, disconnectLive, onLiveChange } from "./live";
 import { clearQueries, invalidate } from "./query";
 
 export interface HubEvent {
@@ -55,6 +55,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     connectLive(eventKey);
     return () => disconnectLive();
   }, [eventKey]);
+
+  // A lead switching the active event (or its game) reaches everyone at once.
+  useEffect(() => onLiveChange((change) => {
+    if (change.entity === "session") void reload();
+  }), [reload]);
 
   const value = useMemo<SessionContextValue>(
     () => ({
