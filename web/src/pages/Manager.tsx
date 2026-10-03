@@ -9,6 +9,7 @@ import { formatAgo, formatCountdown, formatTime, serverNow, useNow, useSchedule 
 import { invalidate, useQuery } from "../lib/query";
 import { navigate } from "../lib/router";
 import { useSession } from "../lib/session";
+import { usePitTeams } from "./Pit";
 
 interface BoardScout {
   key: string;
@@ -61,6 +62,7 @@ const TABS = [
   { id: "board", label: "Live board", to: "/manager" },
   { id: "scouts", label: "Scouts", to: "/manager/scouts" },
   { id: "entries", label: "Entries", to: "/manager/entries" },
+  { id: "pit", label: "Pit visits", to: "/manager/pit" },
   { id: "activity", label: "Activity", to: "/manager/activity" },
 ];
 
@@ -334,7 +336,7 @@ function entryStatus(entry: ManagerEntry) {
 }
 
 function EntriesTab() {
-  const { game } = useSession();
+  const { game, event } = useSession();
   const schedule = useSchedule();
   const board = useBoard();
   const now = useNow();
@@ -394,7 +396,12 @@ function EntriesTab() {
       {entries.loading ? <Loading /> : null}
       {entries.data && entries.data.entries.length === 0 ? <Empty title="No entries match.">Entries appear here the moment a scout starts one.</Empty> : null}
       {entries.data && entries.data.entries.length > 0 ? (
-        <Panel aside={`${entries.data.entries.length} entries`}>
+        <Panel
+          aside={
+            <a href={`/api/hub/events/${event!.eventKey}/export/entries.csv`}>Download all submitted entries as a spreadsheet</a>
+          }
+          title={`${entries.data.entries.length} entries`}
+        >
           <div className="table-scroll">
             <table className="table table-compact table-click">
               <thead>
@@ -436,6 +443,67 @@ function EntriesTab() {
           </div>
         </Panel>
       ) : null}
+    </>
+  );
+}
+
+function PitTab() {
+  const { event, game } = useSession();
+  const pit = usePitTeams();
+  const now = useNow();
+  const [open, setOpen] = useState<number | null>(null);
+  const teams = pit.data?.teams ?? [];
+  const fields = allFields(game.pitForm);
+  if (pit.loading) return <Loading />;
+  if (teams.length === 0) return <Empty title="No teams yet." />;
+  const visited = teams.filter((t) => t.done > 0).length;
+  return (
+    <>
+      <div className="row row-between">
+        <p className="muted">
+          {visited} of {teams.length} teams visited.
+        </p>
+        <a className="btn btn-small" href={`/api/hub/events/${event!.eventKey}/export/pit.csv`}>
+          Download as a spreadsheet
+        </a>
+      </div>
+      <Panel>
+        <ul className="slots">
+          {teams.map((team) => {
+            const entries = (team.entries ?? []).filter((e) => e.status === "submitted");
+            return (
+              <li key={team.teamNumber} className="pit-row">
+                <button type="button" className="pit-head" onClick={() => setOpen(open === team.teamNumber ? null : team.teamNumber)} aria-expanded={open === team.teamNumber} disabled={entries.length === 0}>
+                  <span>
+                    <strong>{team.teamNumber}</strong> {team.name}
+                  </span>
+                  {entries.length ? <Chip tone="good">{entries.map((e) => e.scout).join(", ")}</Chip> : <Chip tone="warn">Not visited</Chip>}
+                </button>
+                {open === team.teamNumber
+                  ? entries.map((entry) => (
+                      <dl key={entry.id} className="facts pit-facts">
+                        <div>
+                          <dt>Scout</dt>
+                          <dd>
+                            {entry.scout}, {formatAgo(entry.submittedAt ?? entry.updatedAt, now)}
+                          </dd>
+                        </div>
+                        {fields
+                          .filter((f) => entry.data[f.key] !== undefined)
+                          .map((field) => (
+                            <div key={field.key}>
+                              <dt>{field.label}</dt>
+                              <dd>{formatValue(field, entry.data[field.key])}</dd>
+                            </div>
+                          ))}
+                      </dl>
+                    ))
+                  : null}
+              </li>
+            );
+          })}
+        </ul>
+      </Panel>
     </>
   );
 }
@@ -661,6 +729,7 @@ export function ManagerPage({ rest }: { rest: string[] }) {
       {tab === "board" ? <BoardTab /> : null}
       {tab === "scouts" ? <ScoutsTab /> : null}
       {tab === "entries" ? <EntriesTab /> : null}
+      {tab === "pit" ? <PitTab /> : null}
       {tab === "activity" ? <ActivityTab /> : null}
     </Page>
   );

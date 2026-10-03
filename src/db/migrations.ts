@@ -140,6 +140,31 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    id: 4,
+    name: "hub_pit",
+    up(db) {
+      db.exec(`
+        CREATE TABLE pit_entries (
+          id TEXT PRIMARY KEY,
+          event_key TEXT NOT NULL,
+          team_number INTEGER NOT NULL,
+          scout TEXT NOT NULL,
+          scout_key TEXT NOT NULL,
+          game_id TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'void')),
+          revision INTEGER NOT NULL DEFAULT 1,
+          started_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          submitted_at TEXT,
+          UNIQUE (event_key, team_number, scout_key),
+          FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_pit_event_team ON pit_entries(event_key, team_number);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): number[] {

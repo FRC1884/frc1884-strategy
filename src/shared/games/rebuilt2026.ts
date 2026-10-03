@@ -225,6 +225,34 @@ export const rebuilt2026: GameDefinition = {
     { key: "scoring_rating", label: "Scoring rating", short: "Scoring", agg: { kind: "ratingAvg", field: "scoring_rating" }, decimals: 2, higherIsBetter: true },
     { key: "defence_rating", label: "Defence rating", short: "Defence", agg: { kind: "ratingAvg", field: "defence_rating" }, decimals: 2, higherIsBetter: true },
   ],
+  headlineMetric: "teleop_fuel",
+  entryPoints(data) {
+    const number = (key: string) => (typeof data[key] === "number" ? (data[key] as number) : 0);
+    const climb = typeof data.climb_level === "string" ? (TELEOP_CLIMB_POINTS[data.climb_level] ?? 0) : 0;
+    return number("auto_fuel") + number("teleop_fuel") + (data.auto_climb === true ? AUTO_CLIMB_POINTS : 0) + climb;
+  },
+  pitMismatches(pit, observed, matchesObserved) {
+    const notes: string[] = [];
+    if (matchesObserved < 2) return notes;
+    const claimed = typeof pit.climb_capability === "string" ? pit.climb_capability : "none";
+    if (claimed !== "none" && (observed.climb_rate ?? 0) === 0) {
+      notes.push(`Says it can climb ${CLIMB_LEVELS.find((l) => l.value === claimed)?.label ?? claimed}, but has not climbed in ${matchesObserved} matches watched.`);
+    }
+    const perCycle = typeof pit.fuel_per_cycle === "number" ? pit.fuel_per_cycle : null;
+    const perShift = typeof pit.cycles_per_shift === "number" ? pit.cycles_per_shift : null;
+    const seen = observed.teleop_fuel;
+    if (perCycle !== null && perShift !== null && seen !== undefined) {
+      // A robot's hub is active for about three of the five teleop periods.
+      const claimedFuel = perCycle * perShift * 3;
+      if (claimedFuel > 20 && claimedFuel > seen * 2) {
+        notes.push(`Claims about ${Math.round(claimedFuel)} fuel a match; scouts saw about ${Math.round(seen)}.`);
+      }
+    }
+    if (pit.auto_climb === true && (observed.auto_climb_rate ?? 0) === 0) {
+      notes.push(`Says it climbs in auto, but has not in ${matchesObserved} matches watched.`);
+    }
+    return notes;
+  },
   briefContext: [
     "Game: REBUILT (FRC 2026). A match lasts 2:40: auto 20 s, transition 10 s, four 25 s shifts, end game 30 s.",
     "Robots score fuel in their alliance hub. Fuel in an active hub is 1 point; fuel in an inactive hub is 0.",

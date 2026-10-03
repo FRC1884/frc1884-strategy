@@ -162,15 +162,17 @@ function sameOrigin(request: FastifyRequest): boolean {
   }
 }
 
-// Route guard. Use as `preHandler: requirePermission("manage")`.
-export function requirePermission(permission: Permission) {
+// Route guard. Use as `preHandler: requirePermission("manage")`. With a list,
+// holding any one of the permissions is enough.
+export function requirePermission(permission: Permission | Permission[]) {
+  const allowed = Array.isArray(permission) ? permission : [permission];
   return async function guard(request: FastifyRequest, reply: FastifyReply) {
     if (request.method !== "GET" && request.method !== "HEAD" && !sameOrigin(request)) {
       return reply.code(403).send({ error: "cross_origin" });
     }
     const user = currentUser(request);
     if (!user) return reply.code(401).send({ error: "not_signed_in" });
-    if (!can(user.role, permission)) return reply.code(403).send({ error: "not_allowed" });
+    if (!allowed.some((p) => can(user.role, p))) return reply.code(403).send({ error: "not_allowed" });
     request.hubUser = user;
   };
 }

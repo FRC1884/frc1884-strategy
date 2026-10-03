@@ -145,6 +145,13 @@ export interface GameDefinition {
   matchForm: FormSection[];
   pitForm: FormSection[];
   metrics: MetricDef[];
+  // Rough points one robot scored, from one scout's entry. Used to compare
+  // what scouts saw against the official alliance score.
+  entryPoints?(data: EntryData): number;
+  // Places where what a team said in the pits does not match what scouts saw.
+  pitMismatches?(pit: EntryData, observed: Record<string, number>, matchesObserved: number): string[];
+  // The metric shown first and used for trends.
+  headlineMetric: string;
   // Plain-language game summary handed to the AI brief writer.
   briefContext: string;
 }

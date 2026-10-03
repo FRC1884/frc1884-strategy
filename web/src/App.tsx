@@ -10,6 +10,7 @@ import { homeFor, NAV, navFor } from "./nav";
 import { AdminPage } from "./pages/Admin";
 import { ManagerPage } from "./pages/Manager";
 import { MorePage } from "./pages/More";
+import { PitEntry, PitList } from "./pages/Pit";
 import { ScoutEntry, ScoutHome, ScoutPick } from "./pages/Scout";
 import { SignIn } from "./pages/SignIn";
 
@@ -42,6 +43,7 @@ function Routes({ path }: { path: string }) {
     case "scout":
       if (rest[0] === "entry" && rest[1]) return <ScoutEntry id={rest[1]} />;
       if (rest[0] === "pick") return <ScoutPick />;
+      if (rest[0] === "pit") return rest[1] ? <PitEntry key={rest[1]} teamNumber={Number(rest[1])} /> : <PitList />;
       return <ScoutHome />;
     case "manager":
       return <ManagerPage rest={rest} />;

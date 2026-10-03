@@ -9,6 +9,8 @@ import { invalidate } from "./query";
 
 export interface LocalEntry {
   id: string;
+  // A match entry (the default) or a pit visit.
+  kind?: "match" | "pit";
   eventKey: string;
   matchKey: string;
   label: string;
@@ -52,7 +54,11 @@ export function getLocal(id: string): LocalEntry | undefined {
 }
 
 export function findLocal(eventKey: string, matchKey: string, teamNumber: number): LocalEntry | undefined {
-  return Object.values(read()).find((e) => e.eventKey === eventKey && e.matchKey === matchKey && e.teamNumber === teamNumber);
+  return Object.values(read()).find((e) => e.kind !== "pit" && e.eventKey === eventKey && e.matchKey === matchKey && e.teamNumber === teamNumber);
+}
+
+export function findLocalPit(eventKey: string, teamNumber: number): LocalEntry | undefined {
+  return Object.values(read()).find((e) => e.kind === "pit" && e.eventKey === eventKey && e.teamNumber === teamNumber);
 }
 
 export function listLocal(eventKey: string): LocalEntry[] {
@@ -104,7 +110,7 @@ export async function flush(): Promise<number> {
       if (!entry.dirty) continue;
       const sentAt = entry.updatedAt;
       try {
-        const result = await api<{ entry: ServerEntry }>(`/events/${entry.eventKey}/entries/${entry.id}`, {
+        const result = await api<{ entry: ServerEntry }>(`/events/${entry.eventKey}/${entry.kind === "pit" ? "pit" : "entries"}/${entry.id}`, {
           method: "PUT",
           body: { matchKey: entry.matchKey, teamNumber: entry.teamNumber, data: entry.data, status: entry.status },
         });
@@ -135,11 +141,14 @@ export async function flush(): Promise<number> {
     flushing = false;
   }
   invalidate("my");
+  invalidate("pit");
   return pending();
 }
 
 function messageFor(code: string): string {
   switch (code) {
+    case "team_not_at_event":
+      return "This team is not at this event.";
     case "team_not_in_match":
       return "This team is not in this match any more. The schedule may have changed.";
     case "entry_voided":
