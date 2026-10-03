@@ -12,5 +12,10 @@
     "resolveJsonModule": true,
     "noEmitOnError": true
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }

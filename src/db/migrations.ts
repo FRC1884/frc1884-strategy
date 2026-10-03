@@ -1,0 +1,76 @@
+import type Database from "better-sqlite3";
+
+// Numbered, run-once schema changes. bootstrap.ts creates the original tables;
+// everything added since goes here so columns can evolve on the live database.
+// Never edit a migration that has shipped: add a new one.
+
+interface Migration {
+  id: number;
+  name: string;
+  up(db: Database.Database): void;
+}
+
+const MIGRATIONS: Migration[] = [
+  {
+    id: 1,
+    name: "hub_foundations",
+    up(db) {
+      db.exec(`
+        ALTER TABLE events ADD COLUMN game_id TEXT;
+
+        CREATE TABLE hub_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE scout_sessions (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          role TEXT NOT NULL CHECK (role IN ('scout', 'manager', 'strategist', 'lead')),
+          signed_in_at TEXT NOT NULL,
+          last_seen_at TEXT NOT NULL,
+          connected INTEGER NOT NULL DEFAULT 0,
+          on_break INTEGER NOT NULL DEFAULT 0,
+          signed_out_at TEXT
+        );
+        CREATE INDEX idx_scout_sessions_name ON scout_sessions(name);
+
+        CREATE TABLE change_log (
+          seq INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_key TEXT,
+          entity TEXT NOT NULL,
+          entity_key TEXT NOT NULL,
+          op TEXT NOT NULL,
+          audience TEXT NOT NULL,
+          payload_json TEXT,
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX idx_change_log_event ON change_log(event_key, seq);
+      `);
+    },
+  },
+];
+
+export function runMigrations(db: Database.Database): number[] {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      id INTEGER PRIMARY KEY,
+      name TEXT NOT NULL,
+      applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  const applied = new Set(
+    (db.prepare(`SELECT id FROM schema_migrations`).all() as Array<{ id: number }>).map((r) => r.id)
+  );
+  const ran: number[] = [];
+  for (const migration of MIGRATIONS) {
+    if (applied.has(migration.id)) continue;
+    db.transaction(() => {
+      migration.up(db);
+      db.prepare(`INSERT INTO schema_migrations (id, name) VALUES (?, ?)`).run(migration.id, migration.name);
+    })();
+    ran.push(migration.id);
+  }
+  return ran;
+}
