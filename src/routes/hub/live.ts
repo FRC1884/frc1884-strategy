@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { canSee, changesSince, latestSeq, subscribe, type Change } from "../../hub/changeFeed.js";
 import { streamClosed, streamOpened, touch } from "../../hub/presence.js";
+import { reassign } from "../../hub/assign.js";
 import { requirePermission } from "../../hub/session.js";
 
 const HEARTBEAT_MS = 20_000;
@@ -50,6 +51,12 @@ export async function hubLiveRoutes(app: FastifyInstance) {
       });
 
       streamOpened(user.sid);
+      // Someone coming online may be given a robot straight away.
+      try {
+        reassign(eventKey);
+      } catch (error) {
+        request.log.warn({ error }, "reassign on connect failed");
+      }
       const heartbeat = setInterval(() => {
         res.write(`: keep-alive\n\n`);
         touch(user.sid);

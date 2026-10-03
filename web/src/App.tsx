@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { startOutbox } from "./lib/outbox";
 import { can, ROLE_LABELS } from "@shared/roles";
 import { Icon } from "./components/Icon";
 import { Empty, Link, Loading, Page } from "./components/ui";
@@ -8,6 +9,7 @@ import { useSession } from "./lib/session";
 import { homeFor, NAV, navFor } from "./nav";
 import { AdminPage } from "./pages/Admin";
 import { MorePage } from "./pages/More";
+import { ScoutEntry, ScoutHome, ScoutPick } from "./pages/Scout";
 import { SignIn } from "./pages/SignIn";
 
 function LiveBadge() {
@@ -36,6 +38,10 @@ function Routes({ path }: { path: string }) {
   }
 
   switch (section) {
+    case "scout":
+      if (rest[0] === "entry" && rest[1]) return <ScoutEntry id={rest[1]} />;
+      if (rest[0] === "pick") return <ScoutPick />;
+      return <ScoutHome />;
     case "admin":
       return <AdminPage />;
     case "more":
@@ -56,6 +62,9 @@ export function App() {
   useEffect(() => {
     if (user && path === "/") navigate(homeFor(user.role), { replace: true });
   }, [user, path]);
+
+  const signedIn = !!user;
+  useEffect(() => (signedIn ? startOutbox() : undefined), [signedIn]);
 
   if (loading) {
     return (

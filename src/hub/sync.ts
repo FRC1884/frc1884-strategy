@@ -1,6 +1,7 @@
 import { db } from "../db/client.js";
 import { ingestStatboticsEvent } from "../integrations/statbotics.js";
 import { fetchTba, ingestTbaEvent, ingestTbaOprs, isTbaConfigured, parseTeamKey } from "../integrations/tba.js";
+import { reassign } from "./assign.js";
 import { publish } from "./changeFeed.js";
 import { getSetting, setSetting } from "./settings.js";
 
@@ -148,6 +149,11 @@ export async function syncEvent(eventKey: string, options: { statbotics?: boolea
   const result: SyncResult = { eventKey, at: new Date().toISOString(), steps };
   setSetting(`last_sync:${eventKey}`, JSON.stringify(result));
   publish({ eventKey, entity: "schedule", key: eventKey, audience: ["scout"] });
+  try {
+    reassign(eventKey);
+  } catch {
+    // Assignment is retried on the next tick.
+  }
   publish({ eventKey, entity: "teams", key: eventKey, audience: ["scout"] });
   publish({ eventKey, entity: "stats", key: eventKey, audience: ["strategy", "manage"] });
   return result;

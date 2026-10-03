@@ -78,6 +78,68 @@ const MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    id: 3,
+    name: "hub_scouting",
+    up(db) {
+      db.exec(`
+        ALTER TABLE scout_sessions ADD COLUMN scouting INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE scout_sessions ADD COLUMN scout_key TEXT;
+        UPDATE scout_sessions SET scouting = 1 WHERE role = 'scout';
+        UPDATE scout_sessions SET scout_key = lower(name);
+        CREATE INDEX idx_scout_sessions_key ON scout_sessions(scout_key);
+
+        CREATE TABLE match_scout_entries (
+          id TEXT PRIMARY KEY,
+          event_key TEXT NOT NULL,
+          match_key TEXT NOT NULL,
+          team_number INTEGER NOT NULL,
+          scout TEXT NOT NULL,
+          scout_key TEXT NOT NULL,
+          game_id TEXT NOT NULL,
+          data_json TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('draft', 'submitted', 'void')),
+          revision INTEGER NOT NULL DEFAULT 1,
+          started_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          submitted_at TEXT,
+          edited_by TEXT,
+          UNIQUE (match_key, team_number, scout_key),
+          FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_entries_event_team ON match_scout_entries(event_key, team_number);
+        CREATE INDEX idx_entries_match ON match_scout_entries(match_key);
+
+        CREATE TABLE scout_assignments (
+          event_key TEXT NOT NULL,
+          match_key TEXT NOT NULL,
+          alliance TEXT NOT NULL CHECK (alliance IN ('red', 'blue')),
+          station INTEGER NOT NULL,
+          team_number INTEGER NOT NULL,
+          scout TEXT,
+          scout_key TEXT,
+          source TEXT NOT NULL DEFAULT 'auto' CHECK (source IN ('auto', 'manager')),
+          locked INTEGER NOT NULL DEFAULT 0,
+          assigned_at TEXT NOT NULL,
+          PRIMARY KEY (match_key, alliance, station),
+          FOREIGN KEY (event_key) REFERENCES events(event_key) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_assignments_scout ON scout_assignments(event_key, scout_key);
+
+        CREATE TABLE scout_activity (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_key TEXT,
+          scout TEXT NOT NULL,
+          scout_key TEXT NOT NULL,
+          match_key TEXT,
+          team_number INTEGER,
+          kind TEXT NOT NULL,
+          at TEXT NOT NULL
+        );
+        CREATE INDEX idx_activity_scout ON scout_activity(scout_key, id);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(db: Database.Database): number[] {

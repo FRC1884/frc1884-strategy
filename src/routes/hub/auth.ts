@@ -13,6 +13,7 @@ import {
   setSessionCookie,
   tooManyFailures,
 } from "../../hub/session.js";
+import { recordActivity } from "../../hub/activity.js";
 import { publish } from "../../hub/changeFeed.js";
 
 export async function hubAuthRoutes(app: FastifyInstance) {
@@ -43,6 +44,7 @@ export async function hubAuthRoutes(app: FastifyInstance) {
     }
     const user = createSession(name, role);
     setSessionCookie(request, reply, user);
+    recordActivity({ eventKey: getActiveEvent()?.eventKey ?? null, scout: user.name, kind: "signed_in" });
     publish({ eventKey: null, entity: "presence", key: user.sid, op: "signed_in", audience: ["manage"] });
     return { user: { name: user.name, role: user.role }, event: getActiveEvent() };
   });
@@ -51,6 +53,7 @@ export async function hubAuthRoutes(app: FastifyInstance) {
     const user = currentUser(request);
     if (user) {
       endSession(user.sid);
+      recordActivity({ eventKey: getActiveEvent()?.eventKey ?? null, scout: user.name, kind: "signed_out" });
       publish({ eventKey: null, entity: "presence", key: user.sid, op: "signed_out", audience: ["manage"] });
     }
     clearSessionCookie(request, reply);

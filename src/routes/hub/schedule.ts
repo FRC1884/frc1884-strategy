@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 
+import { reassign } from "../../hub/assign.js";
 import { publish } from "../../hub/changeFeed.js";
 import { deleteManualMatch, loadSchedule, loadTeams, saveManualMatch, setMarkedPlayed } from "../../hub/schedule.js";
 import { requirePermission } from "../../hub/session.js";
@@ -57,6 +58,7 @@ export async function hubScheduleRoutes(app: FastifyInstance) {
       if (new Set([...red, ...blue]).size !== 6) return reply.code(400).send({ error: "duplicate_team" });
       const matchKey = saveManualMatch(eventKey, { compLevel, matchNumber, plannedAt, red, blue });
       publish({ eventKey, entity: "schedule", key: matchKey, audience: ["scout"] });
+      reassign(eventKey);
       return { matchKey };
     }
   );
@@ -81,6 +83,7 @@ export async function hubScheduleRoutes(app: FastifyInstance) {
       const played = (request.body as { played?: unknown } | null)?.played !== false;
       if (!setMarkedPlayed(eventKey, matchKey, played)) return reply.code(404).send({ error: "match_not_found" });
       publish({ eventKey, entity: "schedule", key: matchKey, audience: ["scout"] });
+      reassign(eventKey);
       return { ok: true };
     }
   );

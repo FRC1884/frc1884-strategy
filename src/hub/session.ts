@@ -62,6 +62,12 @@ export function roleForCode(code: string): Role | null {
   return match;
 }
 
+// One person may sign in on two devices, or sign in again later. They are the
+// same scout as long as the name matches, whatever the capitals.
+export function scoutKey(name: string): string {
+  return name.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 export function cleanName(input: unknown): string | null {
   if (typeof input !== "string") return null;
   const name = input.replace(/\s+/g, " ").trim();
@@ -135,9 +141,10 @@ export function currentUser(request: FastifyRequest): HubUser | null {
 export function createSession(name: string, role: Role): HubUser {
   const sid = crypto.randomUUID();
   const now = new Date().toISOString();
+  // Scouts are given robots to watch. Other roles can opt in from the Scout tab.
   db.prepare(
-    `INSERT INTO scout_sessions (id, name, role, signed_in_at, last_seen_at) VALUES (?, ?, ?, ?, ?)`
-  ).run(sid, name, role, now, now);
+    `INSERT INTO scout_sessions (id, name, role, signed_in_at, last_seen_at, scouting, scout_key) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(sid, name, role, now, now, role === "scout" ? 1 : 0, scoutKey(name));
   return { sid, name, role };
 }
 
