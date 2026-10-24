@@ -10,9 +10,9 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@fastify/static": "^9.0.0",
+    "@fastify/static": "^10.1.2",
     "better-sqlite3": "^12.8.0",
-    "fastify": "^5.8.2"
+    "fastify": "^5.12.5"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
