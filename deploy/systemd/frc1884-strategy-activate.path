@@ -1,0 +1,9 @@
+[Unit]
+Description=Activate successful frc1884-strategy builds
+
+[Path]
+PathExists=/var/lib/frc1884-strategy-activate/ready
+Unit=frc1884-strategy-activate.service
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Dispatch signed frc1884-strategy deployment requests
+
+[Path]
+PathExists=/var/lib/frc1884-strategy-request/pending
+Unit=frc1884-strategy-deploy.service
+
+[Install]
+WantedBy=multi-user.target

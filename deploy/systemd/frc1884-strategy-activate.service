@@ -1,0 +1,14 @@
+[Unit]
+Description=Activate the fixed frc1884-strategy runtime
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/bin/rm -f /var/lib/frc1884-strategy-activate/ready
+ExecStart=/usr/bin/systemctl restart frc1884-strategy.service
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/frc1884-strategy-activate

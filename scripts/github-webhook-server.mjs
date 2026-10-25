@@ -1,25 +1,19 @@
 #!/usr/bin/env node
 
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { mkdirSync, openSync } from "node:fs";
-import { spawn } from "node:child_process";
+import { writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 
 const port = Number(process.env.PORT || "3013");
 const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
-const deployLogDir = process.env.DEPLOY_LOG_DIR || "/srv/frc1884-strategy/log";
-const deployLogFile =
-  process.env.DEPLOY_LOG_FILE || `${deployLogDir}/github-webhook.log`;
-const repoDir = process.env.REPO_DIR || "/srv/frc1884-strategy";
+const deployRequestFile =
+  process.env.DEPLOY_REQUEST_FILE || "/var/lib/frc1884-strategy-request/pending";
 const expectedRepo = process.env.GITHUB_REPOSITORY || "FRC1884/frc1884-strategy";
 const expectedRef = process.env.GITHUB_DEPLOY_REF || "refs/heads/main";
-const lockFile = process.env.DEPLOY_LOCK_FILE || "/tmp/frc1884-strategy-deploy.lock";
 
 if (!webhookSecret) {
   throw new Error("GITHUB_WEBHOOK_SECRET is required");
 }
-
-mkdirSync(deployLogDir, { recursive: true });
 
 function json(res, statusCode, body) {
   res.writeHead(statusCode, { "content-type": "application/json" });
@@ -44,31 +38,14 @@ function isValidSignature(rawBody, signatureHeader) {
   return timingSafeEqual(received, expected);
 }
 
-function queueDeploy(afterSha) {
-  const logFd = openSync(deployLogFile, "a", 0o644);
-  const deployCommand = [
-    "flock",
-    "-n",
-    lockFile,
-    "bash",
-    "-lc",
-    [
-      `echo "[$(date -Is)] deploy requested for ${afterSha}"`,
-      `cd ${repoDir}`,
-      "git fetch origin",
-      "git show origin/main:scripts/deploy-jpclawhq-main.sh >/dev/null",
-      "git checkout main",
-      "git pull --ff-only origin main",
-      "./scripts/deploy-jpclawhq-main.sh",
-    ].join(" && "),
-  ];
-
-  const child = spawn("sudo", deployCommand, {
-    detached: true,
-    stdio: ["ignore", logFd, logFd],
-  });
-
-  child.unref();
+function queueDeploy() {
+  // systemd consumes this fixed marker. Payload fields never become commands,
+  // process arguments, executable paths, or filenames.
+  try {
+    writeFileSync(deployRequestFile, "deploy\n", { flag: "wx", mode: 0o660 });
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+  }
 }
 
 const server = createServer((req, res) => {
@@ -86,7 +63,13 @@ const server = createServer((req, res) => {
     }
 
     const event = req.headers["x-github-event"];
-    const payload = JSON.parse(rawBody.toString("utf8"));
+    let payload;
+    try {
+      payload = JSON.parse(rawBody.toString("utf8"));
+      if (payload === null || typeof payload !== "object") throw new Error("object required");
+    } catch {
+      return json(res, 400, { ok: false, error: "invalid_json" });
+    }
 
     if (event === "ping") {
       return json(res, 200, { ok: true, event: "ping" });
@@ -104,11 +87,16 @@ const server = createServer((req, res) => {
       return json(res, 202, { ok: true, ignored: "unexpected_ref" });
     }
 
-    queueDeploy(payload.after);
+    try {
+      queueDeploy();
+    } catch (error) {
+      console.error("Unable to queue deployment:", error.code);
+      return json(res, 503, { ok: false, error: "deploy_unavailable" });
+    }
     return json(res, 202, { ok: true, queued: true, after: payload.after });
   });
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`GitHub webhook server listening on http://127.0.0.1:${port}`);
+  console.log(`GitHub webhook server listening on http://127.0.0.1:${server.address().port}`);
 });

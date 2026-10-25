@@ -4,13 +4,36 @@ After=network.target
 
 [Service]
 Type=simple
-User=mariano
-Group=mariano
+User=frc1884-strategy
+Group=frc1884-strategy
 WorkingDirectory=/srv/frc1884-strategy
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=3010
+EnvironmentFile=-/etc/frc1884-strategy/app.env
+Environment=DATABASE_PATH=/var/lib/frc1884-strategy/app.db
 ExecStart=/usr/bin/node /srv/frc1884-strategy/dist/server.js
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectProc=invisible
+ProcSubset=pid
+UMask=0027
+TemporaryFileSystem=/srv:ro /opt:ro /var/lib:ro /var/cache:ro
+InaccessiblePaths=-/run/agent-app-secrets -/run/openclaw -/run/openclaw-prod -/run/agent-ssh-995 -/run/agent-ssh-1000 -/run/agent-1password
+BindReadOnlyPaths=/srv/frc1884-strategy
+StateDirectory=frc1884-strategy
+StateDirectoryMode=0700
+BindPaths=/var/lib/frc1884-strategy
 Restart=always
 RestartSec=5
 

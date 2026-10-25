@@ -1,0 +1,34 @@
+[Unit]
+Description=Build frc1884-strategy as its unprivileged deploy account
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=frc1884-strategy-deploy
+Group=frc1884-strategy-deploy
+SupplementaryGroups=frc1884-strategy-trigger
+WorkingDirectory=/srv/frc1884-strategy
+Environment=HOME=/var/cache/frc1884-strategy-deploy
+ExecStart=/usr/local/libexec/frc1884-strategy/deploy-jpclawhq.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectProc=invisible
+ProcSubset=pid
+UMask=0027
+TemporaryFileSystem=/srv:ro /opt:ro /var/lib:ro /var/cache:ro
+InaccessiblePaths=-/run/agent-app-secrets -/run/openclaw -/run/openclaw-prod -/run/agent-ssh-995 -/run/agent-ssh-1000 -/run/agent-1password
+CacheDirectory=frc1884-strategy-deploy
+CacheDirectoryMode=0700
+BindPaths=/srv/frc1884-strategy /var/cache/frc1884-strategy-deploy /var/lib/frc1884-strategy-request /var/lib/frc1884-strategy-activate
+UMask=0022
+TimeoutStartSec=30min
