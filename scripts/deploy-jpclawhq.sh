@@ -5,9 +5,7 @@ set -euo pipefail
 # Requests carry no trusted inputs. Only this fixed main branch is built.
 rm -f /var/lib/frc1884-strategy-request/pending
 cd /srv/frc1884-strategy
-# Never deploy over source edits made by an operator on the live checkout.
-git diff --quiet
-git diff --cached --quiet
+# Fast-forward keeps unrelated operator edits and refuses conflicting changes.
 git fetch origin main
 git switch main
 git merge --ff-only origin/main

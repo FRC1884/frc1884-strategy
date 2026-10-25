@@ -79,7 +79,8 @@ sudo systemctl start frc1884-strategy.service "$app-webhook.service"
 Account/group creation is a first-time operation; check getent before resuming
 an interrupted migration. Existing checkout ownership changes preserve source,
 Git state, and build artifacts. Check deployed Git state before migration;
-the deployment builder refuses tracked source edits and requires main to fast-forward.
+the deployment builder fast-forwards main, preserving unrelated local edits and
+refusing changes that conflict with them.
 Do not discard local changes to make deployment succeed. At inspection, strategy\nmain had edits to package.json, package-lock.json, public/strategy/griffins-strategy.jsx,\nand public/strategy/index.html, plus untracked public/strategy/griffins-strategy.js\nand log/. Reconcile these before enabling automatic builds. Repository origin stays
 the existing public HTTPS URL, so no personal SSH or GitHub credentials are needed.
 
