@@ -9,7 +9,7 @@ import { loadSeasonProfile, profileToContext } from "./seasonProfile.js";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 // Vision model for match analysis. Confirm against your current available
 // models and bump as needed (your briefs pin an older Sonnet — worth aligning).
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5-5";
 
 // How many frames to sample from the recording. More frames = better read but
 // more tokens/cost. Evenly spaced across the clip.
