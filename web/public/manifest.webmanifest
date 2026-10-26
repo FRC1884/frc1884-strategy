@@ -1,0 +1,11 @@
+{
+  "name": "Griffins Hub",
+  "short_name": "Hub",
+  "description": "Scouting and strategy for FRC team 1884.",
+  "start_url": "/hub/",
+  "scope": "/hub/",
+  "display": "standalone",
+  "background_color": "#0f2536",
+  "theme_color": "#0f2536",
+  "icons": [{ "src": "/assets/griffins-mark.png", "sizes": "any", "type": "image/png" }]
+}

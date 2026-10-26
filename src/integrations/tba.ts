@@ -22,7 +22,7 @@ export function isTbaConfigured(): boolean {
   return Boolean(process.env.TBA_API_KEY);
 }
 
-async function fetchTba<T>(pathname: string): Promise<T> {
+export async function fetchTba<T>(pathname: string): Promise<T> {
   const response = await fetch(`${TBA_BASE_URL}${pathname}`, {
     headers: { "X-TBA-Auth-Key": getApiKey() }
   });
@@ -34,7 +34,7 @@ async function fetchTba<T>(pathname: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function parseTeamKey(raw: string): number | null {
+export function parseTeamKey(raw: string): number | null {
   if (typeof raw !== "string" || !raw.startsWith("frc")) {
     return null;
   }
@@ -46,7 +46,7 @@ function safeMetricKey(raw: string): string {
   return raw.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
-function toIsoFromUnix(seconds?: number | null): string | null {
+export function toIsoFromUnix(seconds?: number | null): string | null {
   if (!seconds) {
     return null;
   }
@@ -65,6 +65,17 @@ function storeSnapshot(
   `).run(entityType, entityKey, JSON.stringify(payload), fetchedAt);
 }
 
+// Makes sure an event row exists before matches or metrics point at it. The
+// real name, dates and location are filled in by the event import.
+function ensureEventRow(eventKey: string): void {
+  const season = Number(eventKey.slice(0, 4));
+  db.prepare(`
+    INSERT INTO events (event_key, name, season, source)
+    VALUES (?, ?, ?, 'tba')
+    ON CONFLICT(event_key) DO NOTHING
+  `).run(eventKey, eventKey, Number.isInteger(season) && season > 1990 ? season : new Date().getFullYear());
+}
+
 interface TbaAlliance {
   team_keys: string[];
   score?: number | null;
@@ -79,6 +90,7 @@ interface TbaMatch {
   key: string;
   event_key: string;
   comp_level: string;
+  set_number?: number | null;
   match_number: number;
   time?: number | null;
   predicted_time?: number | null;
@@ -113,32 +125,37 @@ export interface TbaOprIngestResult {
   coprStatNames: string[];
 }
 
-export async function ingestTbaEvent(eventKey: string): Promise<TbaEventIngestResult> {
+// By default only qualification matches are kept, which is what the original
+// strategy page expects. The hub passes `allLevels` to keep playoffs too.
+export async function ingestTbaEvent(
+  eventKey: string,
+  options: { allLevels?: boolean } = {}
+): Promise<TbaEventIngestResult> {
   const fetchedAt = new Date().toISOString();
   const matches = await fetchTba<TbaMatch[]>(`/event/${encodeURIComponent(eventKey)}/matches`);
 
-  const qmMatches = matches.filter((m) => m.comp_level === "qm");
+  const qmMatches = options.allLevels ? matches : matches.filter((m) => m.comp_level === "qm");
   const droppedNonQmCount = matches.length - qmMatches.length;
 
   let teamUpsertCount = 0;
 
   const transaction = db.transaction(() => {
-    db.prepare(`
-      INSERT INTO events (event_key, name, season, location, source)
-      VALUES (?, 'Newton Division', 2026, 'Houston, TX, USA', 'tba')
-      ON CONFLICT(event_key) DO NOTHING
-    `).run(eventKey);
+    ensureEventRow(eventKey);
 
     storeSnapshot("matches", eventKey, matches, fetchedAt);
 
     const upsertMatch = db.prepare(`
-      INSERT INTO matches (match_key, event_key, comp_level, match_number, scheduled_at, red_score, blue_score, source, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'tba', CURRENT_TIMESTAMP)
+      INSERT INTO matches (match_key, event_key, comp_level, match_number, scheduled_at, red_score, blue_score, set_number, planned_at, predicted_at, actual_at, source, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'tba', CURRENT_TIMESTAMP)
       ON CONFLICT(match_key) DO UPDATE SET
         event_key = excluded.event_key,
         comp_level = excluded.comp_level,
         match_number = excluded.match_number,
         scheduled_at = excluded.scheduled_at,
+        set_number = excluded.set_number,
+        planned_at = excluded.planned_at,
+        predicted_at = excluded.predicted_at,
+        actual_at = excluded.actual_at,
         red_score = excluded.red_score,
         blue_score = excluded.blue_score,
         source = excluded.source,
@@ -188,7 +205,11 @@ export async function ingestTbaEvent(eventKey: string): Promise<TbaEventIngestRe
         match.match_number,
         scheduledAt,
         redScore,
-        blueScore
+        blueScore,
+        match.set_number ?? null,
+        toIsoFromUnix(match.time),
+        toIsoFromUnix(match.predicted_time),
+        toIsoFromUnix(match.actual_time)
       );
 
       const matchRow = selectMatchId.get(match.key) as { id: number };
@@ -255,11 +276,7 @@ export async function ingestTbaOprs(eventKey: string): Promise<TbaOprIngestResul
   const coprStatNames: string[] = [];
 
   const transaction = db.transaction(() => {
-    db.prepare(`
-      INSERT INTO events (event_key, name, season, location, source)
-      VALUES (?, 'Newton Division', 2026, 'Houston, TX, USA', 'tba')
-      ON CONFLICT(event_key) DO NOTHING
-    `).run(eventKey);
+    ensureEventRow(eventKey);
 
     storeSnapshot("oprs", eventKey, oprPayload, fetchedAt);
     storeSnapshot("coprs", eventKey, coprPayload, fetchedAt);
